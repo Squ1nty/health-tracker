@@ -55,7 +55,7 @@ export default function Navbar() {
             }`}
           />
           <span
-            className={`h-0.5 w-6 rounded-full bg-black transition-opacity duration-200 ease-out ${
+            className={`h-0.5 w-6 rounded-full bg-black transition-opacity duration-300 ease-out ${
               isOpen ? "opacity-0" : "opacity-100"
             }`}
           />
