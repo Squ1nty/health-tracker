@@ -43,7 +43,7 @@ export default function LoginForm() {
 
           <div className="relative mb-4 flex rounded-lg bg-neutral-100 p-1 text-sm font-medium">
             <div
-              className={`absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-white shadow-sm transition-transform duration-200 ease-out ${
+              className={`absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-white shadow-sm transition-transform duration-200 ease-out cursor-pointer ${
                 isSignup ? "translate-x-full" : "translate-x-0"
               }`}
             />
