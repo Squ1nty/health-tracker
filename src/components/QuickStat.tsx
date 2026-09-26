@@ -5,9 +5,7 @@ type Stat = {
 
 const stats: Stat[] = [
   { label: "Steps today", value: "1,234" },
-  { label: "Calories burned", value: "1,234" },
   { label: "Water intake", value: "1,234L" },
-  { label: "Sleep last night", value: "1,234hr" },
 ];
 
 export default function QuickStat() {
