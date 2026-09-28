@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import HeroSection from "@/components/HeroSection";
 import QuickStat from "@/components/QuickStat";
 import Navbar from "@/components/Navbar";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function Home() {
   // Dev-only toggle so the logged-in view can be previewed without a real backend.
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isLoggedIn, setIsLoggedIn } = useAuth();
 
   return (
     <div className="flex min-h-svh w-full flex-col">
