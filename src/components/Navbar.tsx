@@ -3,10 +3,20 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import ChevronRight from "@/components/ChevronRight";
+import { useAuth } from "@/components/AuthProvider";
+
+const statLinks = [
+  { href: "/steps", label: "Steps" },
+  { href: "/water", label: "Water intake" },
+  { href: "/meals", label: "Meals" },
+];
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { isLoggedIn } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
 
   const closeMenu = () => setIsOpen(false);
 
@@ -28,6 +38,51 @@ export default function Navbar() {
           >
             Home
           </Link>
+          {isLoggedIn && (
+            <div
+              className="relative"
+              onMouseEnter={() => setIsStatsOpen(true)}
+              onMouseLeave={() => setIsStatsOpen(false)}
+            >
+              <button
+                type="button"
+                onClick={() => setIsStatsOpen((open) => !open)}
+                aria-expanded={isStatsOpen}
+                className="flex cursor-pointer items-center gap-1 rounded-md px-4 py-2 text-sm transition-colors duration-200 hover:bg-neutral-100"
+              >
+                Stats
+                <ChevronRight
+                  className={`text-neutral-400 transition-transform duration-300 ease-out ${
+                    isStatsOpen ? "-rotate-90" : "rotate-90"
+                  }`}
+                />
+              </button>
+
+              {/* pt-2 bridges the gap between the button and the panel so the
+                  hover isn't lost while the cursor moves down into it. */}
+              <div
+                className={`absolute left-0 top-full pt-2 transition-all duration-300 ease-out ${
+                  isStatsOpen
+                    ? "translate-y-0 opacity-100"
+                    : "pointer-events-none -translate-y-2 opacity-0"
+                }`}
+              >
+                <div className="flex w-48 flex-col gap-1 rounded-lg border border-neutral-200 bg-white p-2 shadow-sm">
+                  {statLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setIsStatsOpen(false)}
+                      className="group flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors duration-200 hover:bg-neutral-100"
+                    >
+                      {link.label}
+                      <ChevronRight className="text-neutral-400 transition-transform duration-200 group-hover:translate-x-0.5" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           <Link
             href="/login"
             className="inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-neutral-500 transition-colors duration-200 hover:bg-neutral-100"
@@ -92,6 +147,21 @@ export default function Navbar() {
                 </p>
               </Link>
             </div>
+            {isLoggedIn &&
+              statLinks.map((link) => (
+                <div key={link.href} className="flex h-10 w-full justify-end">
+                  <Link
+                    href={link.href}
+                    onClick={closeMenu}
+                    className='group flex h-10 w-full items-center justify-between overflow-hidden rounded-md px-8 transition-all duration-300 ease-out hover:w-94 hover:border-neutral-300 hover:bg-neutral-100'
+                  >
+                    {link.label}
+                    <p>
+                      &gt;
+                    </p>
+                  </Link>
+                </div>
+              ))}
             <hr className='border-gray-200 my-2'></hr>
             <div className="flex items-center gap-2 px-3">
               <Link
