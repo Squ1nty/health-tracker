@@ -20,7 +20,7 @@ export default function Home() {
         <button
           type="button"
           onClick={() => setIsLoggedIn((v) => !v)}
-          className="text-center text-xs text-neutral-400 underline"
+          className="text-center text-xs text-faint underline"
         >
           Dev: toggle logged in ({isLoggedIn ? "on" : "off"})
         </button>

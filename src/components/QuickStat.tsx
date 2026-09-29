@@ -21,13 +21,13 @@ export default function QuickStat() {
           <Link
             key={stat.label}
             href={stat.href}
-            className="group flex cursor-pointer flex-col gap-1 rounded-lg border border-neutral-200 bg-white p-4 transition-colors hover:bg-neutral-50"
+            className="group flex cursor-pointer flex-col gap-1 rounded-lg border border-line bg-surface p-4 transition-colors hover:bg-surface-raised"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs text-neutral-500">{stat.label}</span>
-              <ChevronRight className="text-neutral-400 transition-transform group-hover:translate-x-0.5" />
+              <span className="text-xs text-muted">{stat.label}</span>
+              <ChevronRight className="text-faint transition-transform group-hover:translate-x-0.5" />
             </div>
-            <span className="text-xl font-bold text-black">{stat.value}</span>
+            <span className="text-xl font-bold text-foreground">{stat.value}</span>
           </Link>
         ))}
       </div>
