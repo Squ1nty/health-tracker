@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const CELL_SIZE = 10;
 const CELL_GAP = 3;
@@ -17,6 +17,9 @@ const LEVEL_CLASSES = [
   "bg-accent/75",
   "bg-accent",
 ];
+
+// Outline for today's circle while it's still empty; shared with the legend.
+const TODAY_RING = "ring-1 ring-faint";
 
 function levelFor(cups: number) {
   if (cups <= 0) return 0;
@@ -54,6 +57,18 @@ function buildWeeks(year: number) {
   return weeks;
 }
 
+// Today's key, read only in the browser. The page is prerendered at build
+// time, so reading the date during render would bake the build date into
+// the HTML; the server snapshot is null and the real date fills in on hydration.
+const noopSubscribe = () => () => {};
+function useTodayKey() {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => dateKey(new Date()),
+    () => null
+  );
+}
+
 export default function WaterGrid({
   cupsByDate = {},
 }: {
@@ -68,6 +83,27 @@ export default function WaterGrid({
     (_, i) => currentYear - i
   );
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const todayKey = useTodayKey();
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const todayRef = useRef<HTMLDivElement>(null);
+
+  // When the grid overflows (narrow screens), center today's cell. Past
+  // years jump to December instead, like GitHub. Setting scrollLeft rather
+  // than scrollIntoView keeps the page itself from scrolling vertically;
+  // the browser clamps the value near either end of the year.
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const cell = todayRef.current;
+    if (cell) {
+      const offset =
+        cell.getBoundingClientRect().left - container.getBoundingClientRect().left;
+      container.scrollLeft += offset - container.clientWidth / 2 + cell.clientWidth / 2;
+    } else {
+      container.scrollLeft = selectedYear < currentYear ? container.scrollWidth : 0;
+    }
+  }, [selectedYear, currentYear, todayKey]);
 
   const weeks = buildWeeks(selectedYear);
 
@@ -89,7 +125,7 @@ export default function WaterGrid({
           {totalCups === 1 ? "cup" : "cups"} logged in {selectedYear}
         </p>
 
-        <div className="overflow-x-auto pb-1">
+        <div ref={scrollRef} className="overflow-x-auto pb-1">
           <div
             className="inline-grid text-[10px] leading-none text-muted"
             style={{
@@ -121,21 +157,29 @@ export default function WaterGrid({
             {weeks.map((week, col) =>
               week.map((day, row) => {
                 if (!day) return null;
-                const cups = cupsByDate[dateKey(day)] ?? 0;
+                const key = dateKey(day);
+                const cups = cupsByDate[key] ?? 0;
+                const isToday = key === todayKey;
                 const dayLabel = day.toLocaleDateString("en-US", {
                   weekday: "long",
                   month: "long",
                   day: "numeric",
                 });
+                // Today is drawn as a circle so color stays reserved for cup
+                // count; an empty today gets a faint ring so it's still findable.
+                const shape = isToday
+                  ? `rounded-full ${cups === 0 ? TODAY_RING : ""}`
+                  : "rounded-xs";
                 return (
                   <div
-                    key={dateKey(day)}
-                    title={
+                    key={key}
+                    ref={isToday ? todayRef : undefined}
+                    title={`${
                       cups > 0
                         ? `${cups} ${cups === 1 ? "cup" : "cups"} on ${dayLabel}`
                         : `No water logged on ${dayLabel}`
-                    }
-                    className={`rounded-[2px] ${LEVEL_CLASSES[levelFor(cups)]}`}
+                    }${isToday ? " (today)" : ""}`}
+                    className={`${shape} ${LEVEL_CLASSES[levelFor(cups)]}`}
                     style={{ gridColumn: col + 2, gridRow: row + 2 }}
                   />
                 );
@@ -144,16 +188,26 @@ export default function WaterGrid({
           </div>
         </div>
 
-        <div className="mt-3 flex items-center justify-end gap-1 text-[10px] text-muted">
-          <span className="mr-1">Less</span>
-          {LEVEL_CLASSES.map((levelClass) => (
+        <div className="mt-3 flex items-center justify-between gap-4 text-[10px] text-muted">
+          <div className="flex items-center gap-1.5">
             <span
-              key={levelClass}
-              className={`rounded-[2px] ${levelClass}`}
+              className={`rounded-full ${TODAY_RING} ${LEVEL_CLASSES[0]}`}
               style={{ width: CELL_SIZE, height: CELL_SIZE }}
             />
-          ))}
-          <span className="ml-1">More</span>
+            <span>Today</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <span className="mr-1">Less</span>
+            {LEVEL_CLASSES.map((levelClass) => (
+              <span
+                key={levelClass}
+                className={`rounded-xs ${levelClass}`}
+                style={{ width: CELL_SIZE, height: CELL_SIZE }}
+              />
+            ))}
+            <span className="ml-1">More</span>
+          </div>
         </div>
       </div>
 
