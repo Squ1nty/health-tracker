@@ -21,13 +21,32 @@ const LEVEL_CLASSES = [
 // Outline for today's circle while it's still empty; shared with the legend.
 const TODAY_RING = "ring-1 ring-faint";
 
-function levelFor(cups: number) {
-  if (cups <= 0) return 0;
-  if (cups <= 2) return 1;
-  if (cups <= 4) return 2;
-  if (cups <= 6) return 3;
-  return 4;
+// Top of the color scale. More can still be logged; it just shows as full blue.
+const SCALE_MAX_ML = 4000;
+const LEVEL_STEP_ML = SCALE_MAX_ML / (LEVEL_CLASSES.length - 1);
+
+// 1 ml-1 L -> 1, 1-2 L -> 2, 2-3 L -> 3, over 3 L -> 4.
+function levelFor(ml: number) {
+  if (ml <= 0) return 0;
+  return Math.min(LEVEL_CLASSES.length - 1, Math.ceil(ml / LEVEL_STEP_ML));
 }
+
+// Under a litre reads as ml ("750 ml"), otherwise litres ("1.25 L").
+function formatVolume(ml: number) {
+  if (ml === 0) return "0 L";
+  if (ml < 1000) return `${ml} ml`;
+  return `${(ml / 1000).toLocaleString("en-US", { maximumFractionDigits: 2 })} L`;
+}
+
+// Legend hover text for each level, derived from the same step as levelFor.
+const LEVEL_LABELS = LEVEL_CLASSES.map((_, level) => {
+  if (level === 0) return "Nothing logged";
+  const low = formatVolume((level - 1) * LEVEL_STEP_ML);
+  const high = formatVolume(level * LEVEL_STEP_ML);
+  return level === LEVEL_CLASSES.length - 1
+    ? `Over ${low}`
+    : level === 1 ? `Up to ${high}` : `${low} - ${high}`;
+});
 
 // Local-time YYYY-MM-DD (toISOString would shift the day across timezones).
 function dateKey(date: Date) {
@@ -70,10 +89,11 @@ function useTodayKey() {
 }
 
 export default function WaterGrid({
-  cupsByDate = {},
+  mlByDate = {},
 }: {
-  // Cups logged per day, keyed by YYYY-MM-DD. Empty until manual logging is built.
-  cupsByDate?: Record<string, number>;
+  // Millilitres logged per day, keyed by YYYY-MM-DD. Whole ml avoids float
+  // rounding when entries are summed. Empty until manual logging is built.
+  mlByDate?: Record<string, number>;
 }) {
   const currentYear = new Date().getFullYear();
   // Tracking starts this year; once accounts exist this becomes the signup year.
@@ -113,16 +133,16 @@ export default function WaterGrid({
     return firstOfMonth ? [{ index, label: MONTHS[firstOfMonth.getMonth()] }] : [];
   });
 
-  const totalCups = weeks
+  const totalMl = weeks
     .flat()
-    .reduce((sum, day) => sum + (day ? cupsByDate[dateKey(day)] ?? 0 : 0), 0);
+    .reduce((sum, day) => sum + (day ? mlByDate[dateKey(day)] ?? 0 : 0), 0);
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-start">
       <div className="min-w-0 flex-1 rounded-lg border border-line bg-surface p-4">
         <p className="mb-3 text-sm text-muted">
-          <span className="font-semibold text-foreground">{totalCups}</span>{" "}
-          {totalCups === 1 ? "cup" : "cups"} logged in {selectedYear}
+          <span className="font-semibold text-foreground">{formatVolume(totalMl)}</span>{" "}
+          logged in {selectedYear}
         </p>
 
         <div ref={scrollRef} className="overflow-x-auto pb-1">
@@ -158,28 +178,28 @@ export default function WaterGrid({
               week.map((day, row) => {
                 if (!day) return null;
                 const key = dateKey(day);
-                const cups = cupsByDate[key] ?? 0;
+                const ml = mlByDate[key] ?? 0;
                 const isToday = key === todayKey;
                 const dayLabel = day.toLocaleDateString("en-US", {
                   weekday: "long",
                   month: "long",
                   day: "numeric",
                 });
-                // Today is drawn as a circle so color stays reserved for cup
-                // count; an empty today gets a faint ring so it's still findable.
+                // Today is drawn as a circle so color stays reserved for the
+                // amount drunk; an empty today gets a faint ring so it's still findable.
                 const shape = isToday
-                  ? `rounded-full ${cups === 0 ? TODAY_RING : ""}`
+                  ? `rounded-full ${ml === 0 ? TODAY_RING : ""}`
                   : "rounded-xs";
                 return (
                   <div
                     key={key}
                     ref={isToday ? todayRef : undefined}
                     title={`${
-                      cups > 0
-                        ? `${cups} ${cups === 1 ? "cup" : "cups"} on ${dayLabel}`
+                      ml > 0
+                        ? `${formatVolume(ml)} on ${dayLabel}`
                         : `No water logged on ${dayLabel}`
                     }${isToday ? " (today)" : ""}`}
-                    className={`${shape} ${LEVEL_CLASSES[levelFor(cups)]}`}
+                    className={`${shape} ${LEVEL_CLASSES[levelFor(ml)]}`}
                     style={{ gridColumn: col + 2, gridRow: row + 2 }}
                   />
                 );
@@ -199,9 +219,10 @@ export default function WaterGrid({
 
           <div className="flex items-center gap-1">
             <span className="mr-1">Less</span>
-            {LEVEL_CLASSES.map((levelClass) => (
+            {LEVEL_CLASSES.map((levelClass, level) => (
               <span
                 key={levelClass}
+                title={LEVEL_LABELS[level]}
                 className={`rounded-xs ${levelClass}`}
                 style={{ width: CELL_SIZE, height: CELL_SIZE }}
               />
