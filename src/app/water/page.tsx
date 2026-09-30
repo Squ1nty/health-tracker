@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import StatPage from "@/components/StatPage";
+import AddWater from "@/components/AddWater";
+import WaterDrop from "@/components/WaterDrop";
 import WaterGrid from "@/components/WaterGrid";
 
 export const metadata: Metadata = {
@@ -13,6 +15,8 @@ export default function WaterPage() {
       description="Track how much water you drink each day."
       wide
     >
+      <WaterDrop />
+      <AddWater />
       <WaterGrid />
     </StatPage>
   );
