@@ -1,34 +1,32 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext } from "react";
 
-type AuthContextValue = {
-  isLoggedIn: boolean;
-  setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
+export type AuthUser = {
+  name: string;
+  email: string;
 };
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+// undefined = no provider mounted; null = logged out.
+const AuthContext = createContext<AuthUser | null | undefined>(undefined);
 
-// Dev-only login flag, shared across pages via the root layout so the
-// logged-in view (e.g. the Stats nav tabs) survives client-side navigation.
+// The root layout reads the session on the server and passes the user in,
+// so client components (e.g. the navbar) can tell who is logged in without
+// their own request.
 export default function AuthProvider({
+  user,
   children,
 }: {
+  user: AuthUser | null;
   children: React.ReactNode;
 }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  return (
-    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={user}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
+  const user = useContext(AuthContext);
+  if (user === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context;
+  return { user, isLoggedIn: user !== null };
 }

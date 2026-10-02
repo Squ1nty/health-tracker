@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "Health Tracker",
@@ -12,14 +13,18 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const currentUser = await getCurrentUser();
+  // Only the fields the UI needs cross over to client components.
+  const user = currentUser && { name: currentUser.name, email: currentUser.email };
+
   return (
     <html
       lang="en"
       className='h-full antialiased'
     >
       <body className="min-h-full flex flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider user={user}>{children}</AuthProvider>
       </body>
     </html>
   );

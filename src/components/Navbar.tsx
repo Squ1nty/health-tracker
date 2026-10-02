@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ChevronRight from "@/components/ChevronRight";
 import { useAuth } from "@/components/AuthProvider";
+import { logout } from "@/app/actions/auth";
 
 const statLinks = [
   { href: "/steps", label: "Steps" },
@@ -14,7 +15,7 @@ const statLinks = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { isLoggedIn } = useAuth();
+  const { user, isLoggedIn } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
 
@@ -83,18 +84,36 @@ export default function Navbar() {
               </div>
             </div>
           )}
-          <Link
-            href="/login"
-            className="inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-muted transition-colors duration-200 hover:bg-surface-raised"
-          >
-            Log in
-          </Link>
-          <Link
-            href="/login?mode=signup"
-            className="inline-flex items-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:scale-105 hover:bg-accent-hover"
-          >
-            Sign up
-          </Link>
+          {user ? (
+            <>
+              <span className="max-w-40 truncate px-2 text-sm text-muted" title={user.email}>
+                {user.name}
+              </span>
+              <form action={logout}>
+                <button
+                  type="submit"
+                  className="inline-flex cursor-pointer items-center rounded-md border border-line px-4 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-surface-raised"
+                >
+                  Log out
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-muted transition-colors duration-200 hover:bg-surface-raised"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/login?mode=signup"
+                className="inline-flex items-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:scale-105 hover:bg-accent-hover"
+              >
+                Sign up
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -163,22 +182,38 @@ export default function Navbar() {
                 </div>
               ))}
             <hr className='border-line my-2'></hr>
-            <div className="flex items-center gap-2 px-3">
-              <Link
-                href="/login"
-                onClick={closeMenu}
-                className="flex flex-1 items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-muted transition-all duration-200 hover:scale-105 hover:bg-surface-raised"
-              >
-                Log in
-              </Link>
-              <Link
-                href="/login?mode=signup"
-                onClick={closeMenu}
-                className="flex flex-1 items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:scale-105 hover:bg-accent-hover"
-              >
-                Sign up
-              </Link>
-            </div>
+            {user ? (
+              <div className="flex items-center justify-between gap-3 px-3">
+                <span className="min-w-0 truncate text-sm text-muted" title={user.email}>
+                  {user.name}
+                </span>
+                <form action={logout} onSubmit={closeMenu}>
+                  <button
+                    type="submit"
+                    className="flex cursor-pointer items-center justify-center rounded-md border border-line px-4 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-surface-raised"
+                  >
+                    Log out
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 px-3">
+                <Link
+                  href="/login"
+                  onClick={closeMenu}
+                  className="flex flex-1 items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-muted transition-all duration-200 hover:scale-105 hover:bg-surface-raised"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/login?mode=signup"
+                  onClick={closeMenu}
+                  className="flex flex-1 items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:scale-105 hover:bg-accent-hover"
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

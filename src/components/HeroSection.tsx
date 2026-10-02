@@ -1,4 +1,5 @@
-export default function HeroSection(){
+// `name` is the logged-in user's name; omitted when logged out.
+export default function HeroSection({ name }: { name?: string }){
   return(
     <div className="w-full min-h-svh grid place-items-center">
       <div className="w-full flex flex-col items-center gap-2">
@@ -6,7 +7,9 @@ export default function HeroSection(){
         <p className="text-center text-muted">Track your health and wellness goals with ease.</p>
       </div>
       <div className="mt-10 w-full flex flex-col items-center gap-2">
-        <p>Login or Sign up to get started!</p>
+        <p className="text-center">
+          {name ? `Good to see you, ${name}!` : "Login or Sign up to get started!"}
+        </p>
       </div>
     </div>
 
