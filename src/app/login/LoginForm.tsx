@@ -1,10 +1,72 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import { login, signup } from "@/app/actions/auth";
+import { NAME_MAX, PASSWORD_MAX, PASSWORD_MIN } from "@/lib/auth/validation";
 
 type Mode = "login" | "signup";
+
+const inputClasses = (hasError: boolean) =>
+  `flex h-10 w-full items-center rounded-md border px-3 py-0 text-sm outline-none transition-colors focus:border-accent ${
+    hasError ? "border-danger bg-danger/10" : "border-line bg-surface"
+  }`;
+
+const labelClasses = "mb-1 block text-sm font-medium text-muted";
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return (
+    <p id={id} role="alert" className="mt-1 text-xs text-danger">
+      {message}
+    </p>
+  );
+}
+
+// Password field with an eye button that toggles between dots and plain text.
+function PasswordInput({
+  hasError,
+  disabled,
+  ...props
+}: { hasError: boolean } & Omit<React.ComponentProps<"input">, "type" | "className">) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="relative">
+      <input
+        {...props}
+        disabled={disabled}
+        type={visible ? "text" : "password"}
+        className={`${inputClasses(hasError)} pr-10`}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        disabled={disabled}
+        aria-label={visible ? "Hide password" : "Show password"}
+        aria-pressed={visible}
+        className="absolute inset-y-0 right-0 flex w-10 cursor-pointer items-center justify-center rounded-r-md text-faint transition-colors hover:text-foreground"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className="h-4 w-4"
+        >
+          <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" />
+          <circle cx="12" cy="12" r="3" />
+          {/* Slash through the eye while the password is showing: click to hide. */}
+          {visible && <path d="m3 3 18 18" />}
+        </svg>
+      </button>
+    </div>
+  );
+}
 
 export default function LoginForm() {
   const searchParams = useSearchParams();
@@ -12,18 +74,15 @@ export default function LoginForm() {
     searchParams.get("mode") === "signup" ? "signup" : "login"
   );
 
-  // Dev-only toggle so error styling can be previewed without a real backend.
-  const [showError, setShowError] = useState(false);
+  // Each mode keeps its own result, so switching tabs doesn't show the
+  // other form's errors.
+  const [signupState, signupAction, signupPending] = useActionState(signup, undefined);
+  const [loginState, loginAction, loginPending] = useActionState(login, undefined);
 
   const isSignup = mode === "signup";
-  const errorMessage = isSignup
-    ? "An account with this email already exists."
-    : "Incorrect email or password.";
-
-  const inputClasses = (extra = "") =>
-    `flex h-10 w-full items-center rounded-md border px-3 py-0 text-sm outline-none transition-colors focus:border-accent ${
-      showError ? "border-danger bg-danger/10" : "border-line bg-surface"
-    } ${extra}`;
+  const state = isSignup ? signupState : loginState;
+  const errors = state?.errors ?? {};
+  const pending = signupPending || loginPending;
 
   return (
     <div className="flex min-h-svh w-full flex-col">
@@ -67,20 +126,45 @@ export default function LoginForm() {
             </button>
           </div>
 
-          {showError && (
-            <div className="mb-4 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
-              {errorMessage}
+          {state?.message && (
+            <div
+              role="alert"
+              className="mb-4 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger"
+            >
+              {state.message}
             </div>
           )}
 
-          <form onSubmit={(e) => e.preventDefault()} className="flex flex-col">
+          {/* noValidate: the server action is the single source of validation,
+              so errors show in our own styling rather than browser popups.
+              React resets the form after each submit; defaultValue puts back
+              what was typed (passwords are deliberately not restored). */}
+          <form
+            action={isSignup ? signupAction : loginAction}
+            noValidate
+            className="flex flex-col"
+          >
             <div>
-              <label className="mb-1 block text-sm font-medium text-muted">
+              <label htmlFor="email" className={labelClasses}>
                 Email
               </label>
-              <input type="email" placeholder="you@example.com" className={inputClasses()} />
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                defaultValue={state?.values?.email}
+                aria-invalid={Boolean(errors.email)}
+                aria-describedby="email-error"
+                className={inputClasses(Boolean(errors.email))}
+              />
+              <FieldError id="email-error" message={errors.email} />
             </div>
 
+            {/* The sign-up-only fields stay mounted so they can animate, and
+                are disabled in login mode so they're skipped by Tab and left
+                out of the submitted form. */}
             <div
               className={`grid transition-all duration-200 ease-out ${
                 isSignup ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
@@ -88,22 +172,45 @@ export default function LoginForm() {
             >
               <div className="overflow-hidden">
                 <div className="pt-3">
-                  <label className="mb-1 block text-sm font-medium text-muted">
+                  <label htmlFor="name" className={labelClasses}>
                     Name
                   </label>
-                  <input type="text" placeholder="Jane Doe" className={inputClasses()} />
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    autoComplete="name"
+                    maxLength={NAME_MAX}
+                    placeholder="Jane Doe"
+                    disabled={!isSignup}
+                    defaultValue={signupState?.values?.name}
+                    aria-invalid={Boolean(errors.name)}
+                    aria-describedby="name-error"
+                    className={inputClasses(Boolean(errors.name))}
+                  />
+                  <FieldError id="name-error" message={errors.name} />
                 </div>
               </div>
             </div>
 
             <div className="pt-3">
-              <label className="mb-1 block text-sm font-medium text-muted">
+              <label htmlFor="password" className={labelClasses}>
                 Password
               </label>
-              <input type="password" placeholder="••••••••" className={inputClasses()} />
-              {showError && !isSignup && (
-                <p className="mt-1 text-xs text-danger">
-                  Check your password and try again.
+              <PasswordInput
+                id="password"
+                name="password"
+                autoComplete={isSignup ? "new-password" : "current-password"}
+                maxLength={PASSWORD_MAX}
+                placeholder="••••••••"
+                aria-invalid={Boolean(errors.password)}
+                aria-describedby="password-error password-hint"
+                hasError={Boolean(errors.password)}
+              />
+              <FieldError id="password-error" message={errors.password} />
+              {isSignup && !errors.password && (
+                <p id="password-hint" className="mt-1 text-xs text-faint">
+                  At least {PASSWORD_MIN} characters, with a letter and a number.
                 </p>
               )}
             </div>
@@ -115,19 +222,33 @@ export default function LoginForm() {
             >
               <div className="overflow-hidden">
                 <div className="pt-3">
-                  <label className="mb-1 block text-sm font-medium text-muted">
+                  <label htmlFor="confirmPassword" className={labelClasses}>
                     Confirm password
                   </label>
-                  <input type="password" placeholder="••••••••" className={inputClasses()} />
+                  <PasswordInput
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    autoComplete="new-password"
+                    maxLength={PASSWORD_MAX}
+                    placeholder="••••••••"
+                    disabled={!isSignup}
+                    aria-invalid={Boolean(errors.confirmPassword)}
+                    aria-describedby="confirmPassword-error"
+                    hasError={Boolean(errors.confirmPassword)}
+                  />
+                  <FieldError id="confirmPassword-error" message={errors.confirmPassword} />
                 </div>
               </div>
             </div>
 
             <button
               type="submit"
-              className="mt-2 flex h-10 items-center justify-center rounded-md bg-accent text-sm font-medium text-white cursor-pointer transition-all hover:scale-[102%] hover:bg-accent-hover"
+              disabled={pending}
+              className="mt-4 flex h-10 items-center justify-center rounded-md bg-accent text-sm font-medium text-white cursor-pointer transition-all hover:scale-[102%] hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100 disabled:hover:bg-accent"
             >
-              {isSignup ? "Sign up" : "Log in"}
+              {isSignup
+                ? pending ? "Creating account…" : "Sign up"
+                : pending ? "Logging in…" : "Log in"}
             </button>
           </form>
 
@@ -177,14 +298,6 @@ export default function LoginForm() {
               Continue with Apple
             </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setShowError((v) => !v)}
-            className="mt-6 w-full text-center text-xs text-faint underline"
-          >
-            Dev: toggle error state ({showError ? "on" : "off"})
-          </button>
         </div>
       </main>
     </div>

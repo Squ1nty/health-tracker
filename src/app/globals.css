@@ -34,3 +34,8 @@ body {
 ::selection {
   background: color-mix(in srgb, var(--color-accent) 40%, transparent);
 }
+
+/* Edge adds its own show-password eye; ours replaces it. */
+input::-ms-reveal {
+  display: none;
+}
