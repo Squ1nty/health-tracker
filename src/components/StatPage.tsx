@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth/session";
 import Navbar from "@/components/Navbar";
 import ChevronRight from "@/components/ChevronRight";
 
-export default function StatPage({
+export default async function StatPage({
   title,
   description,
   children,
@@ -14,6 +16,9 @@ export default function StatPage({
   // Widens the content column for pages with large visuals (e.g. the water grid).
   wide?: boolean;
 }) {
+  // Stat pages are per-user, so they need a logged-in account.
+  if (!(await getCurrentUser())) redirect("/login");
+
   return (
     <div className="flex min-h-svh w-full flex-col">
       <Navbar />
