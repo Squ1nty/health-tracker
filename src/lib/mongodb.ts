@@ -1,5 +1,5 @@
 import "server-only";
-import { MongoClient, type Db } from "mongodb";
+import { MongoClient, type Db, type Document } from "mongodb";
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
@@ -31,4 +31,20 @@ function getClient() {
 // The database name comes from the path of MONGODB_URI.
 export async function getDb(): Promise<Db> {
   return (await getClient()).db();
+}
+
+// Creates the collection with its validator (database-level schema rules),
+// or updates the validator if the collection already exists.
+export async function applyValidator(db: Db, name: string, validator: Document) {
+  const exists = await db.listCollections({ name }, { nameOnly: true }).hasNext();
+  if (exists) {
+    await db.command({ collMod: name, validator, validationLevel: "strict" });
+    return;
+  }
+  try {
+    await db.createCollection(name, { validator });
+  } catch (error) {
+    // 48 = NamespaceExists: another request created it between the check and here.
+    if ((error as { code?: number }).code !== 48) throw error;
+  }
 }

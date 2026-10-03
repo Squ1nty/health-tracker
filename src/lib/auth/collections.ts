@@ -1,6 +1,6 @@
 import "server-only";
 import type { Collection, Db, Document, ObjectId } from "mongodb";
-import { getDb } from "@/lib/mongodb";
+import { applyValidator, getDb } from "@/lib/mongodb";
 import { EMAIL_MAX, NAME_MAX } from "@/lib/auth/validation";
 
 // _id is left off both types: the driver adds it on reads and generates it on insert.
@@ -55,22 +55,6 @@ const SESSION_VALIDATOR: Document = {
     },
   },
 };
-
-// Creates the collection with its validator, or updates the validator if
-// the collection already exists.
-async function applyValidator(db: Db, name: string, validator: Document) {
-  const exists = await db.listCollections({ name }, { nameOnly: true }).hasNext();
-  if (exists) {
-    await db.command({ collMod: name, validator, validationLevel: "strict" });
-    return;
-  }
-  try {
-    await db.createCollection(name, { validator });
-  } catch (error) {
-    // 48 = NamespaceExists: another request created it between the check and here.
-    if ((error as { code?: number }).code !== 48) throw error;
-  }
-}
 
 async function setUp(db: Db) {
   await Promise.all([
