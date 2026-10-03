@@ -7,14 +7,13 @@ const DROP_BOTTOM = 120;
 export default function WaterDrop({
   level = 0,
 }: {
-  // How full the drop is, 0-1. Stays empty until water logging is built.
+  // How full the drop is, 0-1 (today's intake as a share of the daily goal).
   level?: number;
 }) {
   const clamped = Math.min(1, Math.max(0, level));
-  const fillHeight = (DROP_BOTTOM - DROP_TOP) * clamped;
 
   return (
-    <div className="flex w-full justify-center py-4">
+    <div className="flex w-full justify-center pt-4">
       <svg
         viewBox="0 0 100 130"
         role="img"
@@ -28,15 +27,23 @@ export default function WaterDrop({
         </defs>
 
         <path d={DROP_PATH} className="fill-surface" />
-        {/* Water rises from the base; the clip keeps it inside the drop shape. */}
-        <rect
-          x="0"
-          y={DROP_BOTTOM - fillHeight}
-          width="100"
-          height={fillHeight}
-          clipPath="url(#water-drop-clip)"
-          className="fill-accent"
-        />
+        {/* The water is a full-height block scaled up from the base, so the
+            level can animate; the clip sits on the wrapper (not the block)
+            so it isn't scaled along with it. */}
+        <g clipPath="url(#water-drop-clip)">
+          <rect
+            x="0"
+            y={DROP_TOP}
+            width="100"
+            height={DROP_BOTTOM - DROP_TOP}
+            className="fill-accent transition-transform duration-700 ease-out"
+            style={{
+              transform: `scaleY(${clamped})`,
+              transformOrigin: "bottom",
+              transformBox: "fill-box",
+            }}
+          />
+        </g>
         <path
           d={DROP_PATH}
           fill="none"
