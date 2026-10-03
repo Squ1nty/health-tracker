@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
+import { dateKey, formatVolume } from "@/lib/water/shared";
+import { useTodayKey } from "@/lib/water/useTodayKey";
 
 const CELL_SIZE = 10;
 const CELL_GAP = 3;
@@ -31,13 +33,6 @@ function levelFor(ml: number) {
   return Math.min(LEVEL_CLASSES.length - 1, Math.ceil(ml / LEVEL_STEP_ML));
 }
 
-// Under a litre reads as ml ("750 ml"), otherwise litres ("1.25 L").
-function formatVolume(ml: number) {
-  if (ml === 0) return "0 L";
-  if (ml < 1000) return `${ml} ml`;
-  return `${(ml / 1000).toLocaleString("en-US", { maximumFractionDigits: 2 })} L`;
-}
-
 // Legend hover text for each level, derived from the same step as levelFor.
 const LEVEL_LABELS = LEVEL_CLASSES.map((_, level) => {
   if (level === 0) return "Nothing logged";
@@ -47,13 +42,6 @@ const LEVEL_LABELS = LEVEL_CLASSES.map((_, level) => {
     ? `Over ${low}`
     : level === 1 ? `Up to ${high}` : `${low} - ${high}`;
 });
-
-// Local-time YYYY-MM-DD (toISOString would shift the day across timezones).
-function dateKey(date: Date) {
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${date.getFullYear()}-${m}-${d}`;
-}
 
 // Splits the year into Sunday-first weeks. Slots before Jan 1 and after
 // Dec 31 are null so the first and last columns line up like GitHub's.
@@ -76,28 +64,19 @@ function buildWeeks(year: number) {
   return weeks;
 }
 
-// Today's key, read only in the browser. The page is prerendered at build
-// time, so reading the date during render would bake the build date into
-// the HTML; the server snapshot is null and the real date fills in on hydration.
-const noopSubscribe = () => () => {};
-function useTodayKey() {
-  return useSyncExternalStore(
-    noopSubscribe,
-    () => dateKey(new Date()),
-    () => null
-  );
-}
-
 export default function WaterGrid({
   mlByDate = {},
 }: {
   // Millilitres logged per day, keyed by YYYY-MM-DD. Whole ml avoids float
-  // rounding when entries are summed. Empty until manual logging is built.
+  // rounding when entries are summed.
   mlByDate?: Record<string, number>;
 }) {
   const currentYear = new Date().getFullYear();
-  // Tracking starts this year; once accounts exist this becomes the signup year.
-  const firstYear = currentYear;
+  // The year list goes back to the earliest year with anything logged.
+  const firstYear = Math.min(
+    currentYear,
+    ...Object.keys(mlByDate).map((key) => Number(key.slice(0, 4)))
+  );
   const years = Array.from(
     { length: currentYear - firstYear + 1 },
     (_, i) => currentYear - i
