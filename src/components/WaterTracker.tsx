@@ -1,10 +1,13 @@
 "use client";
 
+import ActivityGrid from "@/components/ActivityGrid";
 import AddWater from "@/components/AddWater";
 import WaterDrop from "@/components/WaterDrop";
-import WaterGrid from "@/components/WaterGrid";
 import { DAILY_GOAL_ML, formatVolume } from "@/lib/water/shared";
 import { useTodayKey } from "@/lib/water/useTodayKey";
+
+// Top of the grid's color scale: days over 3 L show as full blue.
+const GRID_SCALE_MAX_ML = 4000;
 
 // Ties the water page together. The server supplies the per-day totals;
 // "today" has to be worked out here in the browser, because only the
@@ -46,7 +49,12 @@ export default function WaterTracker({
         </div>
       </div>
       <AddWater />
-      <WaterGrid mlByDate={mlByDate} />
+      <ActivityGrid
+        valueByDate={mlByDate}
+        scaleMax={GRID_SCALE_MAX_ML}
+        formatValue={formatVolume}
+        emptyLabel="No water logged"
+      />
     </>
   );
 }

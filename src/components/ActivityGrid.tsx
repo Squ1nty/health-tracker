@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { dateKey, formatVolume } from "@/lib/water/shared";
+import { dateKey } from "@/lib/water/shared";
 import { useTodayKey } from "@/lib/water/useTodayKey";
 
 const CELL_SIZE = 10;
@@ -19,29 +19,12 @@ const LEVEL_CLASSES = [
   "bg-accent/75",
   "bg-accent",
 ];
+const TOP_LEVEL = LEVEL_CLASSES.length - 1;
 
 // Outline for today's circle while it's still empty; shared with the legend.
 const TODAY_RING = "ring-1 ring-faint";
-
-// Top of the color scale. More can still be logged; it just shows as full blue.
-const SCALE_MAX_ML = 4000;
-const LEVEL_STEP_ML = SCALE_MAX_ML / (LEVEL_CLASSES.length - 1);
-
-// 1 ml-1 L -> 1, 1-2 L -> 2, 2-3 L -> 3, over 3 L -> 4.
-function levelFor(ml: number) {
-  if (ml <= 0) return 0;
-  return Math.min(LEVEL_CLASSES.length - 1, Math.ceil(ml / LEVEL_STEP_ML));
-}
-
-// Legend hover text for each level, derived from the same step as levelFor.
-const LEVEL_LABELS = LEVEL_CLASSES.map((_, level) => {
-  if (level === 0) return "Nothing logged";
-  const low = formatVolume((level - 1) * LEVEL_STEP_ML);
-  const high = formatVolume(level * LEVEL_STEP_ML);
-  return level === LEVEL_CLASSES.length - 1
-    ? `Over ${low}`
-    : level === 1 ? `Up to ${high}` : `${low} - ${high}`;
-});
+// Outline for the day picked for editing (grids that allow picking).
+const SELECTED_RING = "ring-2 ring-foreground";
 
 // Splits the year into Sunday-first weeks. Slots before Jan 1 and after
 // Dec 31 are null so the first and last columns line up like GitHub's.
@@ -64,18 +47,37 @@ function buildWeeks(year: number) {
   return weeks;
 }
 
-export default function WaterGrid({
-  mlByDate = {},
+// A GitHub-style year grid: one square per day, shaded by that day's value.
+// Used for both water (ml) and steps.
+export default function ActivityGrid({
+  valueByDate = {},
+  scaleMax,
+  formatValue,
+  emptyLabel,
+  selectedDate,
+  onSelectDate,
+  isSelectable,
 }: {
-  // Millilitres logged per day, keyed by YYYY-MM-DD. Whole ml avoids float
-  // rounding when entries are summed.
-  mlByDate?: Record<string, number>;
+  // Each day's value, keyed by YYYY-MM-DD.
+  valueByDate?: Record<string, number>;
+  // Top of the color scale, split into four equal bands. Higher values
+  // still count; they just show as full blue.
+  scaleMax: number;
+  // Value with its unit, e.g. "1.25 L" or "8,432 steps".
+  formatValue: (value: number) => string;
+  // Tooltip for a day with nothing, e.g. "No water logged".
+  emptyLabel: string;
+  // Optional day picking: the picked day gets an outline, and days passing
+  // `isSelectable` become buttons that call `onSelectDate`.
+  selectedDate?: string | null;
+  onSelectDate?: (key: string) => void;
+  isSelectable?: (key: string) => boolean;
 }) {
   const currentYear = new Date().getFullYear();
   // The year list goes back to the earliest year with anything logged.
   const firstYear = Math.min(
     currentYear,
-    ...Object.keys(mlByDate).map((key) => Number(key.slice(0, 4)))
+    ...Object.keys(valueByDate).map((key) => Number(key.slice(0, 4)))
   );
   const years = Array.from(
     { length: currentYear - firstYear + 1 },
@@ -85,7 +87,7 @@ export default function WaterGrid({
   const todayKey = useTodayKey();
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const todayRef = useRef<HTMLDivElement>(null);
+  const todayRef = useRef<HTMLElement | null>(null);
 
   // When the grid overflows (narrow screens), center today's cell. Past
   // years jump to December instead, like GitHub. Setting scrollLeft rather
@@ -104,6 +106,21 @@ export default function WaterGrid({
     }
   }, [selectedYear, currentYear, todayKey]);
 
+  const levelStep = scaleMax / TOP_LEVEL;
+  // E.g. for water (4 L scale): up to 1 L -> 1, 1-2 L -> 2, 2-3 L -> 3, over 3 L -> 4.
+  const levelFor = (value: number) =>
+    value <= 0 ? 0 : Math.min(TOP_LEVEL, Math.ceil(value / levelStep));
+
+  // Legend hover text for each level, derived from the same step as levelFor.
+  const levelLabels = LEVEL_CLASSES.map((_, level) => {
+    if (level === 0) return "Nothing logged";
+    const low = formatValue((level - 1) * levelStep);
+    const high = formatValue(level * levelStep);
+    return level === TOP_LEVEL
+      ? `Over ${low}`
+      : level === 1 ? `Up to ${high}` : `${low} - ${high}`;
+  });
+
   const weeks = buildWeeks(selectedYear);
 
   // A month's label sits above the week column containing its 1st.
@@ -112,19 +129,20 @@ export default function WaterGrid({
     return firstOfMonth ? [{ index, label: MONTHS[firstOfMonth.getMonth()] }] : [];
   });
 
-  const totalMl = weeks
+  const total = weeks
     .flat()
-    .reduce((sum, day) => sum + (day ? mlByDate[dateKey(day)] ?? 0 : 0), 0);
+    .reduce((sum, day) => sum + (day ? valueByDate[dateKey(day)] ?? 0 : 0), 0);
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-start">
       <div className="min-w-0 flex-1 rounded-lg border border-line bg-surface p-4">
         <p className="mb-3 text-sm text-muted">
-          <span className="font-semibold text-foreground">{formatVolume(totalMl)}</span>{" "}
+          <span className="font-semibold text-foreground">{formatValue(total)}</span>{" "}
           logged in {selectedYear}
         </p>
 
-        <div ref={scrollRef} className="overflow-x-auto pb-1">
+        {/* Padding leaves room for the selection outline at the grid's edges. */}
+        <div ref={scrollRef} className="overflow-x-auto p-0.5 pb-1.5">
           <div
             className="inline-grid text-[10px] leading-none text-muted"
             style={{
@@ -157,30 +175,53 @@ export default function WaterGrid({
               week.map((day, row) => {
                 if (!day) return null;
                 const key = dateKey(day);
-                const ml = mlByDate[key] ?? 0;
+                const value = valueByDate[key] ?? 0;
                 const isToday = key === todayKey;
+                const isSelected = key === selectedDate;
                 const dayLabel = day.toLocaleDateString("en-US", {
                   weekday: "long",
                   month: "long",
                   day: "numeric",
                 });
+                const title = `${
+                  value > 0
+                    ? `${formatValue(value)} on ${dayLabel}`
+                    : `${emptyLabel} on ${dayLabel}`
+                }${isToday ? " (today)" : ""}`;
                 // Today is drawn as a circle so color stays reserved for the
-                // amount drunk; an empty today gets a faint ring so it's still findable.
-                const shape = isToday
-                  ? `rounded-full ${ml === 0 ? TODAY_RING : ""}`
-                  : "rounded-xs";
+                // day's value; an empty today gets a faint ring so it's still findable.
+                const outline = isSelected
+                  ? SELECTED_RING
+                  : isToday && value === 0 ? TODAY_RING : "";
+                const className = `${isToday ? "rounded-full" : "rounded-xs"} ${outline} ${
+                  LEVEL_CLASSES[levelFor(value)]
+                }`;
+                const style = { gridColumn: col + 2, gridRow: row + 2 };
+                const ref = isToday
+                  ? (element: HTMLElement | null) => {
+                      todayRef.current = element;
+                    }
+                  : undefined;
+
+                if (onSelectDate && (isSelectable?.(key) ?? true)) {
+                  return (
+                    <button
+                      key={key}
+                      ref={ref}
+                      type="button"
+                      onClick={() => onSelectDate(key)}
+                      title={title}
+                      aria-label={title}
+                      aria-pressed={isSelected}
+                      className={`${className} cursor-pointer ${
+                        isSelected ? "" : "hover:ring-1 hover:ring-muted"
+                      }`}
+                      style={style}
+                    />
+                  );
+                }
                 return (
-                  <div
-                    key={key}
-                    ref={isToday ? todayRef : undefined}
-                    title={`${
-                      ml > 0
-                        ? `${formatVolume(ml)} on ${dayLabel}`
-                        : `No water logged on ${dayLabel}`
-                    }${isToday ? " (today)" : ""}`}
-                    className={`${shape} ${LEVEL_CLASSES[levelFor(ml)]}`}
-                    style={{ gridColumn: col + 2, gridRow: row + 2 }}
-                  />
+                  <div key={key} ref={ref} title={title} className={className} style={style} />
                 );
               })
             )}
@@ -201,7 +242,7 @@ export default function WaterGrid({
             {LEVEL_CLASSES.map((levelClass, level) => (
               <span
                 key={levelClass}
-                title={LEVEL_LABELS[level]}
+                title={levelLabels[level]}
                 className={`rounded-xs ${levelClass}`}
                 style={{ width: CELL_SIZE, height: CELL_SIZE }}
               />
