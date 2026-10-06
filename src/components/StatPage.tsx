@@ -7,11 +7,14 @@ import ChevronRight from "@/components/ChevronRight";
 export default async function StatPage({
   title,
   description,
+  action,
   children,
   wide = false,
 }: {
   title: string;
   description: string;
+  // Sits in the top right corner, level with the title (e.g. a menu button).
+  action?: React.ReactNode;
   children?: React.ReactNode;
   // Widens the content column for pages with large visuals (e.g. the water grid).
   wide?: boolean;
@@ -34,9 +37,12 @@ export default async function StatPage({
             Home
           </Link>
 
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
-            <p className="mt-1 text-sm text-muted">{description}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
+              <p className="mt-1 text-sm text-muted">{description}</p>
+            </div>
+            {action}
           </div>
 
           {children ?? (

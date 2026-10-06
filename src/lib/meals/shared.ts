@@ -20,6 +20,8 @@ export type MealRow =
   | { id: string; kind: "food"; name: string; values: MacroValues };
 
 export type MealPlan = {
+  // What the user calls this plan; empty until they name it.
+  name: string;
   // The "Macros to Hit" row.
   targets: MacroValues;
   rows: MealRow[];
@@ -33,6 +35,7 @@ export const MAX_MACRO_VALUE = 99999.99;
 export const ROW_ID_PATTERN = /^[a-z0-9]{1,40}$/;
 
 export const EMPTY_MEAL_PLAN: MealPlan = {
+  name: "",
   targets: { calories: null, carbs: null, protein: null, fat: null },
   rows: [],
 };
@@ -65,6 +68,9 @@ export function parseMealPlan(input: unknown): MealPlan | null {
   if (!isRecord(input) || !Array.isArray(input.rows)) return null;
   if (input.rows.length > MAX_MEAL_ROWS) return null;
 
+  const name = input.name ?? "";
+  if (typeof name !== "string" || name.length > MEAL_NAME_MAX) return null;
+
   const targets = parseValues(input.targets);
   if (!targets) return null;
 
@@ -87,5 +93,5 @@ export function parseMealPlan(input: unknown): MealPlan | null {
       return null;
     }
   }
-  return { targets, rows };
+  return { name: name.trim(), targets, rows };
 }

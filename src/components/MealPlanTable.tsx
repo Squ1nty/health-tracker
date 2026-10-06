@@ -20,7 +20,7 @@ type DraftValues = Record<MacroKey, string>;
 type DraftRow =
   | { id: string; kind: "header"; name: string }
   | { id: string; kind: "food"; name: string; values: DraftValues };
-type Draft = { targets: DraftValues; rows: DraftRow[] };
+type Draft = { name: string; targets: DraftValues; rows: DraftRow[] };
 
 type Status = { kind: "idle" | "saving" | "saved" } | { kind: "error"; text: string };
 
@@ -47,6 +47,7 @@ function toNumbers(values: DraftValues): MealPlan["targets"] {
 
 function toDraft(plan: MealPlan): Draft {
   return {
+    name: plan.name,
     targets: toText(plan.targets),
     rows: plan.rows.map((row) =>
       row.kind === "food" ? { ...row, values: toText(row.values) } : row
@@ -56,6 +57,7 @@ function toDraft(plan: MealPlan): Draft {
 
 function toPlan(draft: Draft): MealPlan {
   return {
+    name: draft.name,
     targets: toNumbers(draft.targets),
     rows: draft.rows.map((row) =>
       row.kind === "food" ? { ...row, values: toNumbers(row.values) } : row
@@ -150,7 +152,7 @@ export default function MealPlanTable({ initialPlan }: { initialPlan: MealPlan }
             { id: newRowId(), kind: "food", name: "", values: { ...EMPTY_VALUES } },
           ]
         : draft.rows;
-    commit({ targets: next, rows });
+    commit({ ...draft, targets: next, rows });
   };
 
   const updateRow = (id: string, change: (row: DraftRow) => DraftRow) =>
@@ -186,8 +188,21 @@ export default function MealPlanTable({ initialPlan }: { initialPlan: MealPlan }
     <div className="flex flex-col gap-3">
       <div className="overflow-hidden rounded-lg border border-line bg-surface">
         <div className="flex items-center justify-between gap-3 px-4 py-3">
-          <h2 className="text-lg font-semibold text-foreground">Meal Plan</h2>
-          <p role="status" className="text-xs text-muted">
+          <div className="flex min-w-0 flex-1 items-center gap-2 text-lg font-semibold text-foreground">
+            <h2 className="shrink-0">Meal Plan</h2>
+            <span aria-hidden="true">-</span>
+            <input
+              type="text"
+              autoComplete="off"
+              value={draft.name}
+              onChange={(e) => commit({ ...draft, name: e.target.value })}
+              maxLength={MEAL_NAME_MAX}
+              placeholder="Insert plan name here"
+              aria-label="Plan name"
+              className="min-w-0 flex-1 bg-transparent outline-none placeholder:font-normal placeholder:text-faint"
+            />
+          </div>
+          <p role="status" className="shrink-0 text-xs text-muted">
             {status.kind === "saving" && "Saving…"}
             {status.kind === "saved" && "Saved"}
             {status.kind === "error" && <span className="text-danger">Not saved</span>}

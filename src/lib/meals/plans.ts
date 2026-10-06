@@ -37,6 +37,8 @@ const MEAL_PLAN_VALIDATOR: Document = {
     properties: {
       _id: { bsonType: "objectId" },
       userId: { bsonType: "objectId" },
+      // Not required: plans saved before naming existed don't have one.
+      name: { bsonType: "string", maxLength: MEAL_NAME_MAX },
       targets: MACRO_VALUES_SCHEMA,
       rows: {
         bsonType: "array",
@@ -66,19 +68,25 @@ async function setUp(db: Db) {
 }
 
 declare global {
-  var _mealsSetupPromise: Promise<void> | undefined;
+  var _mealsSetup: { rules: string; promise: Promise<void> } | undefined;
 }
 
-// Validator and index are applied once per server process, on first use.
+const RULES = JSON.stringify(MEAL_PLAN_VALIDATOR);
+
+// Validator and index are applied once per server process, on first use,
+// and again if the validator changes: the dev server keeps this global
+// across hot reloads, so an edited schema would otherwise never reach the
+// database until a restart.
 async function getMealPlans(): Promise<Collection<MealPlanDoc>> {
   const db = await getDb();
-  if (!global._mealsSetupPromise) {
-    global._mealsSetupPromise = setUp(db).catch((error) => {
-      global._mealsSetupPromise = undefined;
+  if (global._mealsSetup?.rules !== RULES) {
+    const promise = setUp(db).catch((error) => {
+      if (global._mealsSetup?.promise === promise) global._mealsSetup = undefined;
       throw error;
     });
+    global._mealsSetup = { rules: RULES, promise };
   }
-  await global._mealsSetupPromise;
+  await global._mealsSetup.promise;
   return db.collection<MealPlanDoc>("mealPlans");
 }
 
@@ -87,9 +95,9 @@ export async function getMealPlan(userId: string): Promise<MealPlan> {
   const plans = await getMealPlans();
   const doc = await plans.findOne(
     { userId: new ObjectId(userId) },
-    { projection: { _id: 0, targets: 1, rows: 1 } }
+    { projection: { _id: 0, name: 1, targets: 1, rows: 1 } }
   );
-  return doc ? { targets: doc.targets, rows: doc.rows } : EMPTY_MEAL_PLAN;
+  return doc ? { name: doc.name ?? "", targets: doc.targets, rows: doc.rows } : EMPTY_MEAL_PLAN;
 }
 
 // Saves the plan, replacing whatever was there.
@@ -97,7 +105,7 @@ export async function setMealPlan(userId: string, plan: MealPlan) {
   const plans = await getMealPlans();
   await plans.updateOne(
     { userId: new ObjectId(userId) },
-    { $set: { targets: plan.targets, rows: plan.rows, updatedAt: new Date() } },
+    { $set: { name: plan.name, targets: plan.targets, rows: plan.rows, updatedAt: new Date() } },
     { upsert: true }
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import MealPlanMenu from "@/components/MealPlanMenu";
 import MealPlanTable from "@/components/MealPlanTable";
 import StatPage from "@/components/StatPage";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -22,7 +23,12 @@ export default async function MealsPage() {
   }
 
   return (
-    <StatPage title="Meals" description="Plan your meals around the macros you want to hit." wide>
+    <StatPage
+      title="Meals"
+      description="Plan your meals around the macros you want to hit."
+      action={<MealPlanMenu />}
+      wide
+    >
       {plan ? (
         <MealPlanTable initialPlan={plan} />
       ) : (
