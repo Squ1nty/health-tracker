@@ -55,6 +55,23 @@ export function roundMacro(value: number) {
   return Math.round(value * 100) / 100;
 }
 
+// Saved plans are told apart by name, ignoring capitals.
+export function sameName(a: string, b: string) {
+  return a.toLowerCase() === b.toLowerCase();
+}
+
+// The name for a copy of a plan: the original's name with the first free
+// number after it, e.g. "Cut" -> "Cut (1)", and "Cut (1)" -> "Cut (2)".
+export function copyName(name: string, taken: string[]) {
+  const base = name.replace(/ \(\d+\)$/, "");
+  for (let number = 1; ; number++) {
+    const suffix = ` (${number})`;
+    // Long names are cut short so the number still fits.
+    const candidate = base.slice(0, MEAL_NAME_MAX - suffix.length).trimEnd() + suffix;
+    if (!taken.some((other) => sameName(other, candidate))) return candidate;
+  }
+}
+
 export function planTotals(rows: MealRow[]) {
   const totals = { calories: 0, carbs: 0, protein: 0, fat: 0 };
   for (const row of rows) {

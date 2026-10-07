@@ -1,7 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { deleteSavedMealPlan, reorderSavedMealPlans } from "@/app/actions/meals";
+import {
+  deleteSavedMealPlan,
+  duplicateSavedMealPlan,
+  reorderSavedMealPlans,
+} from "@/app/actions/meals";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { MACROS, type SavedPlanSummary } from "@/lib/meals/shared";
 
 const UNREACHABLE = "Couldn't reach the server. Check your connection and try again.";
@@ -20,6 +25,10 @@ export default function MealPlansList({ initialPlans }: { initialPlans: SavedPla
   // The plan being dragged by its handle, if any.
   const [dragging, setDragging] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The plan the "delete this?" question is being asked about, if any.
+  const [deleting, setDeleting] = useState<SavedPlanSummary | null>(null);
+  // The plan being copied, so its button can't be pressed twice.
+  const [copying, setCopying] = useState<string | null>(null);
   const list = useRef<HTMLUListElement>(null);
   // The order when the drag began, to tell whether anything moved.
   const orderAtStart = useRef("");
@@ -66,8 +75,9 @@ export default function MealPlansList({ initialPlans }: { initialPlans: SavedPla
     void saveOrder(next);
   };
 
+  // Runs once the delete has been confirmed.
   const remove = async (plan: SavedPlanSummary) => {
-    if (!window.confirm(`Delete "${plan.name}"? This can't be undone.`)) return;
+    setDeleting(null);
     const before = plans;
     setPlans(plans.filter((other) => other.id !== plan.id));
     try {
@@ -82,6 +92,29 @@ export default function MealPlansList({ initialPlans }: { initialPlans: SavedPla
     }
     // The delete didn't happen, so put the plan back.
     setPlans(before);
+  };
+
+  // The copy is named and stored by the server, then slotted in below the original.
+  const duplicate = async (plan: SavedPlanSummary) => {
+    if (copying) return;
+    setCopying(plan.id);
+    try {
+      const result = await duplicateSavedMealPlan(plan.id);
+      if (result.ok) {
+        setError(null);
+        setPlans((current) => {
+          const index = current.findIndex((other) => other.id === plan.id);
+          const next = [...current];
+          next.splice(index === -1 ? next.length : index + 1, 0, result.plan);
+          return next;
+        });
+      } else {
+        setError(result.error);
+      }
+    } catch {
+      setError(UNREACHABLE);
+    }
+    setCopying(null);
   };
 
   if (plans.length === 0) {
@@ -161,7 +194,29 @@ export default function MealPlansList({ initialPlans }: { initialPlans: SavedPla
 
             <button
               type="button"
-              onClick={() => remove(plan)}
+              onClick={() => duplicate(plan)}
+              disabled={copying !== null}
+              aria-label={`Duplicate ${plan.name}`}
+              className={`${iconButtonClasses} cursor-pointer hover:bg-surface-raised hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40`}
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="6.5" y="6.5" width="8.5" height="8.5" rx="1.5" />
+                <path d="M11.5 6.5V4.5A1.5 1.5 0 0 0 10 3H4.5A1.5 1.5 0 0 0 3 4.5V10a1.5 1.5 0 0 0 1.5 1.5h2" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeleting(plan)}
               aria-label={`Delete ${plan.name}`}
               className={`${iconButtonClasses} cursor-pointer hover:bg-danger/15 hover:text-danger`}
             >
@@ -187,6 +242,16 @@ export default function MealPlansList({ initialPlans }: { initialPlans: SavedPla
         <p role="alert" className="text-center text-xs text-danger">
           {error}
         </p>
+      )}
+
+      {deleting && (
+        <ConfirmDialog
+          title="Delete meal plan?"
+          message={`"${deleting.name}" will be deleted. This can't be undone.`}
+          confirmLabel="Delete"
+          onConfirm={() => remove(deleting)}
+          onCancel={() => setDeleting(null)}
+        />
       )}
     </div>
   );
