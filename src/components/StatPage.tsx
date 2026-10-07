@@ -10,6 +10,7 @@ export default async function StatPage({
   action,
   children,
   wide = false,
+  back = { href: "/", label: "Home" },
 }: {
   title: string;
   description: string;
@@ -18,6 +19,8 @@ export default async function StatPage({
   children?: React.ReactNode;
   // Widens the content column for pages with large visuals (e.g. the water grid).
   wide?: boolean;
+  // Where the link above the title leads. Home unless the page sits under another one.
+  back?: { href: string; label: string };
 }) {
   // Stat pages are per-user, so they need a logged-in account.
   if (!(await getCurrentUser())) redirect("/login");
@@ -30,11 +33,11 @@ export default async function StatPage({
           className={`flex w-full flex-col gap-6 ${wide ? "max-w-4xl" : "max-w-md"}`}
         >
           <Link
-            href="/"
+            href={back.href}
             className="group flex w-fit items-center gap-1 text-sm text-muted transition-colors duration-200 hover:text-foreground"
           >
             <ChevronRight className="rotate-180 transition-transform duration-200 group-hover:-translate-x-0.5" />
-            Home
+            {back.label}
           </Link>
 
           <div className="flex items-start justify-between gap-3">
