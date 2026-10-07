@@ -94,13 +94,23 @@ export default function MealPlansList({ initialPlans }: { initialPlans: SavedPla
 
   return (
     <div className="flex flex-col gap-3">
+      <p className="text-xs text-muted">
+        The plan at the top is your active plan. Move a plan to the top to set it as active.
+      </p>
+
+      {/* Only plan rows go in this list: dragging matches rows by position. */}
       <ul ref={list} className="flex flex-col gap-2">
         {plans.map((plan, index) => (
           <li
             key={plan.id}
+            // The first plan is the active one, set apart from the rest.
             className={`flex items-center gap-1 rounded-lg border bg-surface py-2 pl-1 pr-2 transition-colors ${
-              plan.id === dragging ? "border-accent bg-surface-raised" : "border-line"
-            }`}
+              plan.id === dragging
+                ? "border-accent bg-surface-raised"
+                : index === 0
+                  ? "border-accent/60"
+                  : "border-line"
+            } ${index === 0 ? "mb-4" : ""}`}
           >
             {/* touch-none stops the page scrolling while a plan is dragged. */}
             <button
@@ -131,7 +141,14 @@ export default function MealPlansList({ initialPlans }: { initialPlans: SavedPla
 
             {/* One line on wide screens; the macros drop under the name on phones. */}
             <div className="flex min-w-0 flex-1 flex-col gap-1 px-1 md:flex-row md:items-center md:justify-between md:gap-4">
-              <p className="truncate text-sm font-semibold text-foreground">{plan.name}</p>
+              <p className="flex min-w-0 items-center gap-2 text-sm font-semibold text-foreground">
+                <span className="truncate">{plan.name}</span>
+                {index === 0 && (
+                  <span className="shrink-0 rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-accent">
+                    Active
+                  </span>
+                )}
+              </p>
               <p className="flex shrink-0 flex-wrap gap-x-3 text-xs text-muted tabular-nums">
                 {MACROS.map(({ key, label, unit }) => (
                   <span key={key}>
