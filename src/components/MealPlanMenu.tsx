@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { saveCurrentMealPlan } from "@/app/actions/meals";
+import { NEW_PLAN_EVENT } from "@/lib/meals/draft";
 
 // How long a pop-up message stays up before closing itself.
 const NOTICE_MS = 5000;
@@ -104,6 +105,18 @@ export default function MealPlanMenu({
           role="menu"
           className="absolute right-0 top-full z-10 mt-1 w-56 overflow-hidden rounded-lg border border-line bg-surface-raised py-1 shadow-lg shadow-black/50"
         >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              // The table holds the plan, so it does the clearing (and the asking).
+              window.dispatchEvent(new Event(NEW_PLAN_EVENT));
+            }}
+            className={itemClasses}
+          >
+            New meal plan
+          </button>
           <button
             type="button"
             role="menuitem"

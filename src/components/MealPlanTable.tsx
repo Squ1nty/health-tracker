@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import MealPlanAddRow from "@/components/MealPlanAddRow";
 import MealPlanRow from "@/components/MealPlanRow";
 import MealPlanTotals from "@/components/MealPlanTotals";
 import { cellBorder, numberInputClasses } from "@/components/mealPlanStyles";
 import {
+  NEW_PLAN_EVENT,
   cleanNumber,
   newRow,
   toDraft,
@@ -17,6 +18,7 @@ import {
   type DraftValues,
 } from "@/lib/meals/draft";
 import {
+  EMPTY_MEAL_PLAN,
   MACROS,
   MAX_MEAL_ROWS,
   MEAL_NAME_MAX,
@@ -36,6 +38,24 @@ export default function MealPlanTable({ initialPlan }: { initialPlan: MealPlan }
     setDraft(next);
     save(toPlan(next));
   };
+
+  // "New meal plan" in the options menu: back to an empty table. Asks
+  // first if there are rows to lose.
+  const startNewPlan = useEffectEvent(() => {
+    if (
+      draft.rows.length > 0 &&
+      !window.confirm("Start a new plan? Anything unsaved in the current one will be lost.")
+    ) {
+      return;
+    }
+    setAddedRow(null);
+    commit(toDraft(EMPTY_MEAL_PLAN));
+  });
+
+  useEffect(() => {
+    window.addEventListener(NEW_PLAN_EVENT, startNewPlan);
+    return () => window.removeEventListener(NEW_PLAN_EVENT, startNewPlan);
+  }, []);
 
   const setTarget = (key: MacroKey, text: string) => {
     const next = { ...draft.targets, [key]: cleanNumber(text) };

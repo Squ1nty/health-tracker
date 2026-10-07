@@ -9,6 +9,11 @@ export type DraftRow =
   | { id: string; kind: "food"; name: string; values: DraftValues };
 export type Draft = { name: string; targets: DraftValues; rows: DraftRow[] };
 
+// Fired on window by the options menu to ask the table to start a new
+// plan. The two sit in different parts of the page, and the table is the
+// one holding the plan, so it does the clearing.
+export const NEW_PLAN_EVENT = "mealplan:new";
+
 const EMPTY_VALUES: DraftValues = { calories: "", carbs: "", protein: "", fat: "" };
 
 function toText(values: MacroValues): DraftValues {
