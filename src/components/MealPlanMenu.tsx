@@ -1,12 +1,32 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { saveCurrentMealPlan } from "@/app/actions/meals";
 
-// The options don't do anything yet: saving and browsing plans come later.
-const OPTIONS = ["Save current meal plan", "View meal plans"];
+// How long a pop-up message stays up before closing itself.
+const NOTICE_MS = 5000;
+// How long it takes to fade out. Matches duration-300 on the box.
+const FADE_MS = 300;
 
-export default function MealPlanMenu() {
+const itemClasses =
+  "block w-full cursor-pointer px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-line disabled:cursor-not-allowed disabled:opacity-40";
+
+// The pop-up message. `shown` counts up with each new message, so showing
+// one while another is up restarts the timer.
+type Notice = { shown: number; kind: "success" | "error"; text: string };
+
+export default function MealPlanMenu({
+  hasSavedPlans,
+}: {
+  // Whether "View meal plans" has anything to show.
+  hasSavedPlans: boolean;
+}) {
   const [open, setOpen] = useState(false);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  // True while the message is fading out, before it's removed.
+  const [fading, setFading] = useState(false);
+  const [saving, startSaving] = useTransition();
   const container = useRef<HTMLDivElement>(null);
 
   // While open, a click anywhere else or Escape closes the menu.
@@ -25,6 +45,42 @@ export default function MealPlanMenu() {
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setFading(true), NOTICE_MS);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
+  // Once the fade has played, take the message off the page.
+  useEffect(() => {
+    if (!fading) return;
+    const timer = setTimeout(() => {
+      setNotice(null);
+      setFading(false);
+    }, FADE_MS);
+    return () => clearTimeout(timer);
+  }, [fading]);
+
+  const show = (kind: Notice["kind"], text: string) => {
+    setFading(false);
+    setNotice((current) => ({ shown: (current?.shown ?? 0) + 1, kind, text }));
+  };
+
+  const save = () => {
+    setOpen(false);
+    startSaving(async () => {
+      try {
+        const result = await saveCurrentMealPlan();
+        if (result.ok) show("success", `Saved "${result.name}" to your meal plans.`);
+        else show("error", result.error);
+      } catch {
+        show("error", "Couldn't reach the server. Check your connection and try again.");
+      }
+    });
+  };
+
+  const isError = notice?.kind === "error";
 
   return (
     <div ref={container} className="relative">
@@ -48,17 +104,61 @@ export default function MealPlanMenu() {
           role="menu"
           className="absolute right-0 top-full z-10 mt-1 w-56 overflow-hidden rounded-lg border border-line bg-surface-raised py-1 shadow-lg shadow-black/50"
         >
-          {OPTIONS.map((option) => (
-            <button
-              key={option}
-              type="button"
+          <button
+            type="button"
+            role="menuitem"
+            onClick={save}
+            disabled={saving}
+            className={itemClasses}
+          >
+            {saving ? "Saving…" : "Save current meal plan"}
+          </button>
+          {hasSavedPlans ? (
+            <Link
+              href="/meals/plans"
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="block w-full cursor-pointer px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-line"
+              className={itemClasses}
             >
-              {option}
+              View meal plans
+            </Link>
+          ) : (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                show(
+                  "error",
+                  "Currently, you have no meal plans saved. Save your current meal plan to see it here."
+                );
+              }}
+              className={itemClasses}
+            >
+              View meal plans
             </button>
-          ))}
+          )}
+        </div>
+      )}
+
+      {notice && (
+        <div
+          role={isError ? "alert" : "status"}
+          className={`fixed inset-x-4 top-1/2 z-50 mx-auto flex w-3/4 max-w-md -translate-y-1/2 items-start gap-3 rounded-lg border bg-surface-raised p-4 text-sm shadow-lg shadow-black/60 transition-opacity duration-300 ${
+            isError ? "border-danger/50 text-danger" : "border-success/50 text-success"
+          } ${fading ? "pointer-events-none opacity-0" : "opacity-100"}`}
+        >
+          <p className="flex-1">{notice.text}</p>
+          <button
+            type="button"
+            onClick={() => setFading(true)}
+            aria-label="Close"
+            className={`-m-1 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-lg leading-none transition-colors ${
+              isError ? "hover:bg-danger/15" : "hover:bg-success/15"
+            }`}
+          >
+            ×
+          </button>
         </div>
       )}
     </div>

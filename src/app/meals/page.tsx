@@ -5,6 +5,7 @@ import MealPlanTable from "@/components/MealPlanTable";
 import StatPage from "@/components/StatPage";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getMealPlan } from "@/lib/meals/plans";
+import { countSavedPlans } from "@/lib/meals/saved";
 import type { MealPlan } from "@/lib/meals/shared";
 
 export const metadata: Metadata = {
@@ -16,8 +17,9 @@ export default async function MealsPage() {
   if (!user) redirect("/login");
 
   let plan: MealPlan | null = null;
+  let savedPlans = 0;
   try {
-    plan = await getMealPlan(user.id);
+    [plan, savedPlans] = await Promise.all([getMealPlan(user.id), countSavedPlans(user.id)]);
   } catch (error) {
     console.error("Failed to load meal plan", error);
   }
@@ -26,7 +28,7 @@ export default async function MealsPage() {
     <StatPage
       title="Meals"
       description="Plan your meals around the macros you want to hit."
-      action={<MealPlanMenu />}
+      action={<MealPlanMenu hasSavedPlans={savedPlans > 0} />}
       wide
     >
       {plan ? (

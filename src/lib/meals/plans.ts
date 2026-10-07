@@ -10,7 +10,7 @@ import {
   type MealPlan,
 } from "@/lib/meals/shared";
 
-// One document per user, holding their whole meal plan. The table is small
+// One document per user, holding the meal plan they're currently editing. The table is small
 // and always edited as a unit, so each save replaces the plan.
 export type MealPlanDoc = MealPlan & {
   userId: ObjectId;
@@ -29,6 +29,30 @@ const MACRO_VALUES_SCHEMA: Document = {
   ),
 };
 
+// The fields that make up a plan itself, shared with the saved plans
+// collection (see saved.ts).
+export const MEAL_PLAN_FIELDS_SCHEMA: Document = {
+  // Not required: plans saved before naming existed don't have one.
+  name: { bsonType: "string", maxLength: MEAL_NAME_MAX },
+  targets: MACRO_VALUES_SCHEMA,
+  rows: {
+    bsonType: "array",
+    maxItems: MAX_MEAL_ROWS,
+    items: {
+      bsonType: "object",
+      required: ["id", "kind", "name"],
+      additionalProperties: false,
+      properties: {
+        id: { bsonType: "string", pattern: "^[a-z0-9]{1,40}$" },
+        kind: { enum: ["header", "food"] },
+        name: { bsonType: "string", maxLength: MEAL_NAME_MAX },
+        // Only food rows have values.
+        values: MACRO_VALUES_SCHEMA,
+      },
+    },
+  },
+};
+
 const MEAL_PLAN_VALIDATOR: Document = {
   $jsonSchema: {
     bsonType: "object",
@@ -37,25 +61,7 @@ const MEAL_PLAN_VALIDATOR: Document = {
     properties: {
       _id: { bsonType: "objectId" },
       userId: { bsonType: "objectId" },
-      // Not required: plans saved before naming existed don't have one.
-      name: { bsonType: "string", maxLength: MEAL_NAME_MAX },
-      targets: MACRO_VALUES_SCHEMA,
-      rows: {
-        bsonType: "array",
-        maxItems: MAX_MEAL_ROWS,
-        items: {
-          bsonType: "object",
-          required: ["id", "kind", "name"],
-          additionalProperties: false,
-          properties: {
-            id: { bsonType: "string", pattern: "^[a-z0-9]{1,40}$" },
-            kind: { enum: ["header", "food"] },
-            name: { bsonType: "string", maxLength: MEAL_NAME_MAX },
-            // Only food rows have values.
-            values: MACRO_VALUES_SCHEMA,
-          },
-        },
-      },
+      ...MEAL_PLAN_FIELDS_SCHEMA,
       updatedAt: { bsonType: "date" },
     },
   },

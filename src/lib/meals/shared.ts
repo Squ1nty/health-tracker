@@ -27,7 +27,17 @@ export type MealPlan = {
   rows: MealRow[];
 };
 
+// One entry in the list of saved plans: enough to show it, not edit it.
+export type SavedPlanSummary = {
+  id: string;
+  name: string;
+  // Each macro added up across the plan's food rows.
+  totals: Record<MacroKey, number>;
+};
+
 export const MAX_MEAL_ROWS = 100;
+// How many plans one user can keep saved.
+export const MAX_SAVED_PLANS = 50;
 export const MEAL_NAME_MAX = 60;
 // Sanity cap on any one cell.
 export const MAX_MACRO_VALUE = 99999.99;
@@ -43,6 +53,16 @@ export const EMPTY_MEAL_PLAN: MealPlan = {
 // Macros are kept to two decimals, like the spreadsheet this replaces.
 export function roundMacro(value: number) {
   return Math.round(value * 100) / 100;
+}
+
+export function planTotals(rows: MealRow[]) {
+  const totals = { calories: 0, carbs: 0, protein: 0, fat: 0 };
+  for (const row of rows) {
+    if (row.kind !== "food") continue;
+    for (const { key } of MACROS) totals[key] += row.values[key] ?? 0;
+  }
+  for (const { key } of MACROS) totals[key] = roundMacro(totals[key]);
+  return totals;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
