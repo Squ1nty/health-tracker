@@ -4,13 +4,16 @@ import { applyValidator, getDb } from "@/lib/mongodb";
 import { MEAL_PLAN_FIELDS_SCHEMA } from "@/lib/meals/plans";
 import {
   MAX_SAVED_PLANS,
+  copyName,
   planTotals,
+  sameName,
   type MealPlan,
   type SavedPlanSummary,
 } from "@/lib/meals/shared";
 
 // One document per saved plan: a copy of the plan as it was when the user
-// saved it. Editing the current plan afterwards doesn't change the copy.
+// saved it. Editing the current plan afterwards doesn't change the copy
+// until it's saved again. A user's saved plans each have their own name.
 export type SavedMealPlanDoc = MealPlan & {
   userId: ObjectId;
   // Where the plan sits in the user's list, lowest first.
@@ -78,17 +81,29 @@ export async function countSavedPlans(userId: string) {
   return plans.countDocuments({ userId: new ObjectId(userId) });
 }
 
-// Adds a copy of the plan to the end of the user's list. Returns false if
-// the list is already full.
-export async function addSavedPlan(userId: string, plan: MealPlan) {
+// Saves the plan under its name. A name the user hasn't used is added to
+// the end of their list; a name they have used updates that saved plan in
+// place, so saving never makes a second copy. Returns what happened:
+// "unchanged" if the saved plan already matches, "full" if there's no
+// room for another.
+export async function keepPlan(userId: string, plan: MealPlan) {
   const plans = await getSavedPlans();
   const owner = new ObjectId(userId);
-  if ((await plans.countDocuments({ userId: owner })) >= MAX_SAVED_PLANS) return false;
+  const saved = await plans.find({ userId: owner }).sort({ position: 1 }).toArray();
 
-  const last = await plans.findOne(
-    { userId: owner },
-    { sort: { position: -1 }, projection: { position: 1 } }
-  );
+  const existing = saved.find((other) => sameName(other.name, plan.name));
+  if (existing) {
+    const before = JSON.stringify([existing.name, existing.targets, existing.rows]);
+    if (before === JSON.stringify([plan.name, plan.targets, plan.rows])) return "unchanged";
+    await plans.updateOne(
+      { _id: existing._id, userId: owner },
+      { $set: { name: plan.name, targets: plan.targets, rows: plan.rows, savedAt: new Date() } }
+    );
+    return "updated";
+  }
+
+  if (saved.length >= MAX_SAVED_PLANS) return "full";
+  const last = saved.at(-1);
   await plans.insertOne({
     userId: owner,
     name: plan.name,
@@ -97,7 +112,42 @@ export async function addSavedPlan(userId: string, plan: MealPlan) {
     position: last ? last.position + 1 : 0,
     savedAt: new Date(),
   });
-  return true;
+  return "added";
+}
+
+// Adds a copy of a saved plan straight after it, named with a number (see
+// copyName). Returns the copy, "full" if there's no room, or null if the
+// plan isn't the user's.
+export async function duplicateSavedPlan(
+  userId: string,
+  id: string
+): Promise<SavedPlanSummary | "full" | null> {
+  const plans = await getSavedPlans();
+  const owner = new ObjectId(userId);
+  const saved = await plans.find({ userId: owner }).toArray();
+
+  const original = saved.find((other) => other._id.toString() === id);
+  if (!original) return null;
+  if (saved.length >= MAX_SAVED_PLANS) return "full";
+
+  const name = copyName(
+    original.name,
+    saved.map((other) => other.name)
+  );
+  // Make room for the copy by moving everything below the original down one.
+  await plans.updateMany(
+    { userId: owner, position: { $gt: original.position } },
+    { $inc: { position: 1 } }
+  );
+  const { insertedId } = await plans.insertOne({
+    userId: owner,
+    name,
+    targets: original.targets,
+    rows: original.rows,
+    position: original.position + 1,
+    savedAt: new Date(),
+  });
+  return { id: insertedId.toString(), name, totals: planTotals(original.rows) };
 }
 
 export async function deleteSavedPlan(userId: string, id: string) {
