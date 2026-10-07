@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import MealPlanMenu from "@/components/MealPlanMenu";
 import MealPlanTable from "@/components/MealPlanTable";
 import StatPage from "@/components/StatPage";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getMealPlan } from "@/lib/meals/plans";
+import { countSavedPlans } from "@/lib/meals/saved";
 import type { MealPlan } from "@/lib/meals/shared";
 
 export const metadata: Metadata = {
@@ -15,14 +17,20 @@ export default async function MealsPage() {
   if (!user) redirect("/login");
 
   let plan: MealPlan | null = null;
+  let savedPlans = 0;
   try {
-    plan = await getMealPlan(user.id);
+    [plan, savedPlans] = await Promise.all([getMealPlan(user.id), countSavedPlans(user.id)]);
   } catch (error) {
     console.error("Failed to load meal plan", error);
   }
 
   return (
-    <StatPage title="Meals" description="Plan your meals around the macros you want to hit." wide>
+    <StatPage
+      title="Meals"
+      description="Plan your meals around the macros you want to hit."
+      action={<MealPlanMenu hasSavedPlans={savedPlans > 0} />}
+      wide
+    >
       {plan ? (
         <MealPlanTable initialPlan={plan} />
       ) : (
