@@ -1,4 +1,4 @@
-import { cellBorder, inputClasses, numberInputClasses } from "@/components/mealPlanStyles";
+import { cellBorder, inputClasses, numberInputClasses } from "@/components/meals/mealPlanStyles";
 import { cleanNumber, type DraftRow } from "@/lib/meals/draft";
 import { MACROS, MEAL_NAME_MAX } from "@/lib/meals/shared";
 

@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/layout/Navbar";
 import { login, signup } from "@/app/actions/auth";
 import { NAME_MAX, PASSWORD_MAX, PASSWORD_MIN } from "@/lib/auth/validation";
 

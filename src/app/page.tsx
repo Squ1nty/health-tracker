@@ -1,9 +1,9 @@
 "use client";
 
-import HeroSection from "@/components/HeroSection";
-import QuickStat from "@/components/QuickStat";
-import Navbar from "@/components/Navbar";
-import { useAuth } from "@/components/AuthProvider";
+import HeroSection from "@/components/home/HeroSection";
+import QuickStat from "@/components/home/QuickStat";
+import Navbar from "@/components/layout/Navbar";
+import { useAuth } from "@/components/layout/AuthProvider";
 
 export default function Home() {
   const { user } = useAuth();

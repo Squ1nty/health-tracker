@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useEffectEvent, useState } from "react";
-import MealPlanAddRow from "@/components/MealPlanAddRow";
-import MealPlanRow from "@/components/MealPlanRow";
-import MealPlanTotals from "@/components/MealPlanTotals";
-import { cellBorder, numberInputClasses } from "@/components/mealPlanStyles";
+import MealPlanAddRow from "@/components/meals/MealPlanAddRow";
+import MealPlanRow from "@/components/meals/MealPlanRow";
+import MealPlanTotals from "@/components/meals/MealPlanTotals";
+import { cellBorder, numberInputClasses } from "@/components/meals/mealPlanStyles";
 import {
   NEW_PLAN_EVENT,
   cleanNumber,

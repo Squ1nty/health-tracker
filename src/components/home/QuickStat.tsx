@@ -1,6 +1,6 @@
 import Link from "next/link";
-import ChevronRight from "@/components/ChevronRight";
-import MealsEaten from "@/components/MealsEaten";
+import ChevronRight from "@/components/ui/ChevronRight";
+import MealsEaten from "@/components/home/MealsEaten";
 
 type Stat = {
   label: string;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import ChevronRight from "@/components/ChevronRight";
+import ChevronRight from "@/components/ui/ChevronRight";
 
 type Meal = {
   name: string;

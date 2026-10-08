@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { saveSteps } from "@/app/actions/steps";
-import ActivityGrid from "@/components/ActivityGrid";
-import StepsRing from "@/components/StepsRing";
+import ActivityGrid from "@/components/ui/ActivityGrid";
+import StepsRing from "@/components/steps/StepsRing";
 import {
   DAILY_STEP_GOAL,
   MAX_DAY_STEPS,

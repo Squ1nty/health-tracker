@@ -1,8 +1,8 @@
 "use client";
 
-import ActivityGrid from "@/components/ActivityGrid";
-import AddWater from "@/components/AddWater";
-import WaterDrop from "@/components/WaterDrop";
+import ActivityGrid from "@/components/ui/ActivityGrid";
+import AddWater from "@/components/water/AddWater";
+import WaterDrop from "@/components/water/WaterDrop";
 import { DAILY_GOAL_ML, formatVolume } from "@/lib/water/shared";
 import { useTodayKey } from "@/lib/water/useTodayKey";
 

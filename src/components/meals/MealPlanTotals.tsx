@@ -1,4 +1,4 @@
-import { cellBorder } from "@/components/mealPlanStyles";
+import { cellBorder } from "@/components/meals/mealPlanStyles";
 import { toNumber, type DraftRow } from "@/lib/meals/draft";
 import { MACROS, roundMacro, type MacroValues } from "@/lib/meals/shared";
 

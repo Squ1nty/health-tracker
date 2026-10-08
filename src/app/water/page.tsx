@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import StatPage from "@/components/StatPage";
-import WaterTracker from "@/components/WaterTracker";
+import StatPage from "@/components/layout/StatPage";
+import WaterTracker from "@/components/water/WaterTracker";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getWaterTotals } from "@/lib/water/logs";
 

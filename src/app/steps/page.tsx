@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import StatPage from "@/components/StatPage";
-import StepsSync from "@/components/StepsSync";
-import StepsTracker from "@/components/StepsTracker";
+import StatPage from "@/components/layout/StatPage";
+import StepsSync from "@/components/steps/StepsSync";
+import StepsTracker from "@/components/steps/StepsTracker";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getStepsByDate } from "@/lib/steps/logs";
 import type { StepDay } from "@/lib/steps/shared";

@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
-import Navbar from "@/components/Navbar";
-import ChevronRight from "@/components/ChevronRight";
+import Navbar from "@/components/layout/Navbar";
+import ChevronRight from "@/components/ui/ChevronRight";
 
 export default async function StatPage({
   title,

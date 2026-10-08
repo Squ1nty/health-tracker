@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import MealPlansList from "@/components/MealPlansList";
-import MealPlansSidebarButton, { MealPlansSidebar } from "@/components/MealPlansSidebar";
-import StatPage from "@/components/StatPage";
+import MealPlansList from "@/components/meals/MealPlansList";
+import MealPlansSidebarButton, { MealPlansSidebar } from "@/components/meals/MealPlansSidebar";
+import StatPage from "@/components/layout/StatPage";
 import { getCurrentUser } from "@/lib/auth/session";
 import { listSavedPlans } from "@/lib/meals/saved";
 import type { SavedPlanSummary } from "@/lib/meals/shared";

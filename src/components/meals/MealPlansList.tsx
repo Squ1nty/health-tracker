@@ -6,7 +6,7 @@ import {
   duplicateSavedMealPlan,
   reorderSavedMealPlans,
 } from "@/app/actions/meals";
-import ConfirmDialog from "@/components/ConfirmDialog";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { MACROS, type SavedPlanSummary } from "@/lib/meals/shared";
 
 const UNREACHABLE = "Couldn't reach the server. Check your connection and try again.";

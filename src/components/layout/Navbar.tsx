@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import ChevronRight from "@/components/ChevronRight";
-import { useAuth } from "@/components/AuthProvider";
+import ChevronRight from "@/components/ui/ChevronRight";
+import { useAuth } from "@/components/layout/AuthProvider";
 import { logout } from "@/app/actions/auth";
 
 const statLinks = [

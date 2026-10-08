@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import AuthProvider from "@/components/AuthProvider";
+import AuthProvider from "@/components/layout/AuthProvider";
 import { getCurrentUser } from "@/lib/auth/session";
 
 export const metadata: Metadata = {

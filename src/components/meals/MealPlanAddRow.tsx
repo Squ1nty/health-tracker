@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { cellBorder } from "@/components/mealPlanStyles";
+import { cellBorder } from "@/components/meals/mealPlanStyles";
 import type { DraftRow } from "@/lib/meals/draft";
 import { MACROS, MAX_MEAL_ROWS } from "@/lib/meals/shared";
 
