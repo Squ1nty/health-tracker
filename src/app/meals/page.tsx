@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import MealPlanMenu from "@/components/meals/MealPlanMenu";
 import MealPlanTable from "@/components/meals/MealPlanTable";
+import MealPlansSidebarButton from "@/components/meals/MealPlansSidebar";
 import StatPage from "@/components/layout/StatPage";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getMealPlan } from "@/lib/meals/plans";
@@ -28,7 +29,12 @@ export default async function MealsPage() {
     <StatPage
       title="Meals"
       description="Plan your meals around the macros you want to hit."
-      action={<MealPlanMenu hasSavedPlans={savedPlans > 0} />}
+      action={
+        <div className="flex items-center gap-1">
+          <MealPlansSidebarButton />
+          <MealPlanMenu hasSavedPlans={savedPlans > 0} />
+        </div>
+      }
       wide
     >
       {plan ? (

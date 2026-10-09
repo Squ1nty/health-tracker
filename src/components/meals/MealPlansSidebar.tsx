@@ -1,10 +1,45 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import ChevronRight from "@/components/ui/ChevronRight";
 
-// What the sidebar holds. Empty for now: this is the space set aside for it.
+// The sidebar's tabs: the pages that make up the meals section.
+const TABS = [
+  { label: "Current Plan", href: "/meals" },
+  { label: "Meal Plans", href: "/meals/plans" },
+  { label: "Meal Tracker", href: "/meals/tracker" },
+];
+
+// What the sidebar holds on wide screens. Empty for now: the tabs are only
+// in the phone sidebar so far.
 function SidebarContent() {
   return <p className="text-sm text-faint">Nothing here yet.</p>;
+}
+
+// `onNavigate` runs when a tab is picked, so the sidebar can close itself.
+function SidebarTabs({ onNavigate }: { onNavigate: () => void }) {
+  const pathname = usePathname();
+
+  return (
+    <nav aria-label="Meals" className="-mx-2 flex flex-col gap-1">
+      {TABS.map(({ label, href }) => (
+        <Link
+          key={href}
+          href={href}
+          onClick={onNavigate}
+          aria-current={pathname === href ? "page" : undefined}
+          className={`group flex items-center justify-between gap-3 rounded-md px-3 py-3 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-surface-raised ${
+            pathname === href ? "bg-surface-raised" : ""
+          }`}
+        >
+          {label}
+          <ChevronRight className="shrink-0 text-faint transition-transform duration-200 group-hover:translate-x-0.5" />
+        </Link>
+      ))}
+    </nav>
+  );
 }
 
 // The sidebar as a column beside the list, on screens wide enough for it.
@@ -74,7 +109,7 @@ export default function MealPlansSidebarButton() {
         >
           ×
         </button>
-        <SidebarContent />
+        <SidebarTabs onNavigate={() => setOpen(false)} />
       </aside>
     </div>
   );
