@@ -9,6 +9,7 @@ import {
   getActivePlan,
   keepPlan,
   reorderSavedPlans,
+  syncSavedPlan,
 } from "@/lib/meals/saved";
 import {
   MAX_SAVED_PLANS,
@@ -20,9 +21,10 @@ import {
 import { isTrackableDate, setItemEaten } from "@/lib/meals/tracker";
 
 export type SaveMealPlanResult = { ok: true } | { ok: false; error: string };
-// `updated` is true when the save replaced a plan already saved under that name.
+// What the save did: added a plan, updated the one already saved under
+// that name, or found it already matched.
 export type KeepMealPlanResult =
-  | { ok: true; name: string; updated: boolean }
+  | { ok: true; name: string; outcome: "added" | "updated" | "unchanged" }
   | { ok: false; error: string };
 export type DuplicateMealPlanResult =
   | { ok: true; plan: SavedPlanSummary }
@@ -34,8 +36,9 @@ const SERVER_ERROR = "Something went wrong on our end. Please try again.";
 const PLAN_ID_PATTERN = /^[a-f0-9]{24}$/;
 const LIST_FULL = `You can keep up to ${MAX_SAVED_PLANS} meal plans. Delete one to save another.`;
 
-// Replaces the logged-in user's meal plan. The argument arrives from the
-// browser, so it's treated as untrusted.
+// Replaces the logged-in user's meal plan, and brings the saved plan it's
+// linked to up to date. The argument arrives from the browser, so it's
+// treated as untrusted.
 export async function saveMealPlan(input: unknown): Promise<SaveMealPlanResult> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: LOGGED_OUT };
@@ -45,14 +48,20 @@ export async function saveMealPlan(input: unknown): Promise<SaveMealPlanResult> 
     return { ok: false, error: "That meal plan couldn't be saved. Check the values and try again." };
   }
 
+  let synced = false;
   try {
     await setMealPlan(user.id, plan);
+    synced = await syncSavedPlan(user.id, plan);
   } catch (error) {
     console.error("Saving meal plan failed", error);
     return { ok: false, error: SERVER_ERROR };
   }
 
   revalidatePath("/meals");
+  if (synced) {
+    revalidatePath("/meals/plans");
+    revalidatePath("/meals/tracker");
+  }
   return { ok: true };
 }
 
@@ -73,14 +82,11 @@ export async function saveCurrentMealPlan(): Promise<KeepMealPlanResult> {
     }
     const outcome = await keepPlan(user.id, plan);
     if (outcome === "full") return { ok: false, error: LIST_FULL };
-    if (outcome === "unchanged") {
-      return { ok: false, error: `"${plan.name}" is already saved, with nothing changed since.` };
-    }
 
     revalidatePath("/meals");
     revalidatePath("/meals/plans");
     revalidatePath("/meals/tracker");
-    return { ok: true, name: plan.name, updated: outcome === "updated" };
+    return { ok: true, name: plan.name, outcome };
   } catch (error) {
     console.error("Saving a copy of the meal plan failed", error);
     return { ok: false, error: SERVER_ERROR };

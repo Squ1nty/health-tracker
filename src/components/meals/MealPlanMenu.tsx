@@ -74,8 +74,13 @@ export default function MealPlanMenu({
       try {
         const result = await saveCurrentMealPlan();
         if (!result.ok) show("error", result.error);
-        else if (result.updated) show("success", `Updated "${result.name}" in your meal plans.`);
-        else show("success", `Saved "${result.name}" to your meal plans.`);
+        else if (result.outcome === "added") {
+          show("success", `Saved "${result.name}" to your meal plans.`);
+        } else if (result.outcome === "updated") {
+          show("success", `Updated "${result.name}" in your meal plans.`);
+        } else {
+          show("success", `"${result.name}" is already up to date in your meal plans.`);
+        }
       } catch {
         show("error", "Couldn't reach the server. Check your connection and try again.");
       }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { setMealItemEaten } from "@/app/actions/meals";
 import MealTrackerGrid from "@/components/meals/MealTrackerGrid";
 import type { MealSet } from "@/lib/meals/shared";
@@ -37,6 +37,14 @@ export default function MealTracker({
   // The set that's up next: the first with something still to eat.
   const current = sets.find((set) => set.foods.some((food) => !eaten.has(food.id)));
   const shown = showAll ? sets : current ? [current] : [];
+
+  // Opening the whole plan scrolls the set that's up next to the middle of
+  // the screen, or as near as the page allows. Only on opening: ticking
+  // items afterwards leaves the page where it is.
+  const currentSection = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (showAll) currentSection.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [showAll]);
 
   const toggle = async (id: string, checked: boolean) => {
     if (!todayKey) return;
@@ -85,7 +93,7 @@ export default function MealTracker({
           </div>
 
           {shown.map((set) => (
-            <section key={set.id}>
+            <section key={set.id} ref={set === current ? currentSection : undefined}>
               <h3
                 className={`border-t border-line bg-surface-raised/50 px-4 py-2 text-center text-sm font-semibold ${
                   set.foods.every((food) => eaten.has(food.id)) ? "text-faint" : "text-foreground"
@@ -118,7 +126,7 @@ export default function MealTracker({
 
           {!showAll && !current && (
             <p className="border-t border-line px-4 py-3 text-sm text-muted">
-              Everything&apos;s eaten for today.
+              Nice Job! You&apos;ve hit your calorie and macro targets for today!
             </p>
           )}
 

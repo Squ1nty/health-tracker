@@ -14,6 +14,9 @@ import {
 // and always edited as a unit, so each save replaces the plan.
 export type MealPlanDoc = MealPlan & {
   userId: ObjectId;
+  // The saved plan this one is kept in step with, once it's been saved
+  // from the menu (see syncSavedPlan in saved.ts).
+  savedId?: ObjectId;
   updatedAt: Date;
 };
 
@@ -62,6 +65,7 @@ const MEAL_PLAN_VALIDATOR: Document = {
       _id: { bsonType: "objectId" },
       userId: { bsonType: "objectId" },
       ...MEAL_PLAN_FIELDS_SCHEMA,
+      savedId: { bsonType: "objectId" },
       updatedAt: { bsonType: "date" },
     },
   },
@@ -106,12 +110,31 @@ export async function getMealPlan(userId: string): Promise<MealPlan> {
   return doc ? { name: doc.name ?? "", targets: doc.targets, rows: doc.rows } : EMPTY_MEAL_PLAN;
 }
 
-// Saves the plan, replacing whatever was there.
+// Saves the plan, replacing whatever was there. A plan with no name is a
+// fresh start (e.g. "New meal plan"), so it lets go of its saved plan.
 export async function setMealPlan(userId: string, plan: MealPlan) {
   const plans = await getMealPlans();
   await plans.updateOne(
     { userId: new ObjectId(userId) },
-    { $set: { name: plan.name, targets: plan.targets, rows: plan.rows, updatedAt: new Date() } },
+    {
+      $set: { name: plan.name, targets: plan.targets, rows: plan.rows, updatedAt: new Date() },
+      ...(plan.name ? {} : { $unset: { savedId: "" } }),
+    },
     { upsert: true }
   );
+}
+
+// The saved plan the user's current plan is kept in step with, if any.
+export async function getLinkedPlanId(userId: string) {
+  const plans = await getMealPlans();
+  const doc = await plans.findOne(
+    { userId: new ObjectId(userId) },
+    { projection: { savedId: 1 } }
+  );
+  return doc?.savedId ?? null;
+}
+
+export async function setLinkedPlanId(userId: string, savedId: ObjectId) {
+  const plans = await getMealPlans();
+  await plans.updateOne({ userId: new ObjectId(userId) }, { $set: { savedId } });
 }

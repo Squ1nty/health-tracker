@@ -106,9 +106,28 @@ export default function MealPlanTable({ initialPlan }: { initialPlan: MealPlan }
               className="min-w-0 flex-1 bg-transparent outline-none placeholder:font-normal placeholder:text-faint"
             />
           </div>
-          <p role="status" className="shrink-0 text-xs text-muted">
+          <p role="status" className="flex shrink-0 items-center gap-1 text-xs text-muted">
             {status.kind === "saving" && "Saving…"}
-            {status.kind === "saved" && "Saved"}
+            {/* Before any edit the table still matches what's stored, so it reads as saved. */}
+            {(status.kind === "saved" || status.kind === "idle") && (
+              <>
+                {/* Two overlapping ticks, like a message's "delivered" mark. */}
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5"
+                >
+                  <path d="M18 6 7 17l-5-5" />
+                  <path d="m22 10-7.5 7.5L13 16" />
+                </svg>
+                Saved
+              </>
+            )}
             {status.kind === "error" && <span className="text-danger">Not saved</span>}
           </p>
         </div>

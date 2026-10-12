@@ -1,7 +1,7 @@
 import "server-only";
 import { ObjectId, type Collection, type Db, type Document } from "mongodb";
 import { applyValidator, getDb } from "@/lib/mongodb";
-import { MEAL_PLAN_FIELDS_SCHEMA } from "@/lib/meals/plans";
+import { MEAL_PLAN_FIELDS_SCHEMA, getLinkedPlanId, setLinkedPlanId } from "@/lib/meals/plans";
 import {
   MAX_SAVED_PLANS,
   copyName,
@@ -96,7 +96,8 @@ export async function countSavedPlans(userId: string) {
 // the end of their list; a name they have used updates that saved plan in
 // place, so saving never makes a second copy. Returns what happened:
 // "unchanged" if the saved plan already matches, "full" if there's no
-// room for another.
+// room for another. Unless it's full, the current plan stays linked to the
+// saved one from then on, so later edits reach it too (see syncSavedPlan).
 export async function keepPlan(userId: string, plan: MealPlan) {
   const plans = await getSavedPlans();
   const owner = new ObjectId(userId);
@@ -105,6 +106,7 @@ export async function keepPlan(userId: string, plan: MealPlan) {
   const existing = saved.find((other) => sameName(other.name, plan.name));
   if (existing) {
     const before = JSON.stringify([existing.name, existing.targets, existing.rows]);
+    await setLinkedPlanId(userId, existing._id);
     if (before === JSON.stringify([plan.name, plan.targets, plan.rows])) return "unchanged";
     await plans.updateOne(
       { _id: existing._id, userId: owner },
@@ -115,7 +117,7 @@ export async function keepPlan(userId: string, plan: MealPlan) {
 
   if (saved.length >= MAX_SAVED_PLANS) return "full";
   const last = saved.at(-1);
-  await plans.insertOne({
+  const { insertedId } = await plans.insertOne({
     userId: owner,
     name: plan.name,
     targets: plan.targets,
@@ -123,7 +125,32 @@ export async function keepPlan(userId: string, plan: MealPlan) {
     position: last ? last.position + 1 : 0,
     savedAt: new Date(),
   });
+  await setLinkedPlanId(userId, insertedId);
   return "added";
+}
+
+// Copies an edit of the current plan over the saved plan it's linked to,
+// so a plan saved once from the menu keeps itself up to date. Returns
+// whether the saved plan changed. Left alone when the edit couldn't be
+// saved from the menu either (no name, no food), or when it's been renamed
+// to a name another saved plan already has.
+export async function syncSavedPlan(userId: string, plan: MealPlan) {
+  if (!plan.name || !plan.rows.some((row) => row.kind === "food")) return false;
+  const savedId = await getLinkedPlanId(userId);
+  if (!savedId) return false;
+
+  const plans = await getSavedPlans();
+  const owner = new ObjectId(userId);
+  const others = await plans
+    .find({ userId: owner, _id: { $ne: savedId } }, { projection: { name: 1 } })
+    .toArray();
+  if (others.some((other) => sameName(other.name, plan.name))) return false;
+
+  const result = await plans.updateOne(
+    { _id: savedId, userId: owner },
+    { $set: { name: plan.name, targets: plan.targets, rows: plan.rows, savedAt: new Date() } }
+  );
+  return result.matchedCount > 0;
 }
 
 // Adds a copy of a saved plan straight after it, named with a number (see
