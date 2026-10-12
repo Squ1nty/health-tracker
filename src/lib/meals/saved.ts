@@ -76,6 +76,17 @@ export async function listSavedPlans(userId: string): Promise<SavedPlanSummary[]
   }));
 }
 
+// The user's active plan: the one at the top of their list. Null if they
+// haven't saved any.
+export async function getActivePlan(userId: string): Promise<MealPlan | null> {
+  const plans = await getSavedPlans();
+  const doc = await plans.findOne(
+    { userId: new ObjectId(userId) },
+    { sort: { position: 1, savedAt: 1 }, projection: { name: 1, targets: 1, rows: 1 } }
+  );
+  return doc ? { name: doc.name, targets: doc.targets, rows: doc.rows } : null;
+}
+
 export async function countSavedPlans(userId: string) {
   const plans = await getSavedPlans();
   return plans.countDocuments({ userId: new ObjectId(userId) });

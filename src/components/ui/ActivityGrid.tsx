@@ -48,7 +48,7 @@ function buildWeeks(year: number) {
 }
 
 // A GitHub-style year grid: one square per day, shaded by that day's value.
-// Used for both water (ml) and steps.
+// Used for water (ml), steps and meals.
 export default function ActivityGrid({
   valueByDate = {},
   scaleMax,

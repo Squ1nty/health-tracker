@@ -6,10 +6,18 @@ import { getMealPlan, setMealPlan } from "@/lib/meals/plans";
 import {
   deleteSavedPlan,
   duplicateSavedPlan,
+  getActivePlan,
   keepPlan,
   reorderSavedPlans,
 } from "@/lib/meals/saved";
-import { MAX_SAVED_PLANS, parseMealPlan, type SavedPlanSummary } from "@/lib/meals/shared";
+import {
+  MAX_SAVED_PLANS,
+  ROW_ID_PATTERN,
+  isTrackable,
+  parseMealPlan,
+  type SavedPlanSummary,
+} from "@/lib/meals/shared";
+import { isTrackableDate, setItemEaten } from "@/lib/meals/tracker";
 
 export type SaveMealPlanResult = { ok: true } | { ok: false; error: string };
 // `updated` is true when the save replaced a plan already saved under that name.
@@ -71,6 +79,7 @@ export async function saveCurrentMealPlan(): Promise<KeepMealPlanResult> {
 
     revalidatePath("/meals");
     revalidatePath("/meals/plans");
+    revalidatePath("/meals/tracker");
     return { ok: true, name: plan.name, updated: outcome === "updated" };
   } catch (error) {
     console.error("Saving a copy of the meal plan failed", error);
@@ -94,6 +103,7 @@ export async function deleteSavedMealPlan(id: string): Promise<SaveMealPlanResul
 
   revalidatePath("/meals");
   revalidatePath("/meals/plans");
+  revalidatePath("/meals/tracker");
   return { ok: true };
 }
 
@@ -140,5 +150,48 @@ export async function reorderSavedMealPlans(ids: string[]): Promise<SaveMealPlan
   }
 
   revalidatePath("/meals/plans");
+  revalidatePath("/meals/tracker");
+  return { ok: true };
+}
+
+// Ticks or unticks a food item on the meal tracker for one day. The item
+// has to be a food in the user's active plan.
+export async function setMealItemEaten(input: {
+  date: string;
+  rowId: string;
+  eaten: boolean;
+}): Promise<SaveMealPlanResult> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: LOGGED_OUT };
+
+  const { date, rowId, eaten } = input ?? {};
+  if (typeof date !== "string" || !isTrackableDate(date)) {
+    return {
+      ok: false,
+      error: "Only today's meals can be ticked off. Refresh the page and try again.",
+    };
+  }
+  if (typeof rowId !== "string" || !ROW_ID_PATTERN.test(rowId) || typeof eaten !== "boolean") {
+    return { ok: false, error: "That item couldn't be found." };
+  }
+
+  try {
+    const plan = await getActivePlan(user.id);
+    if (!plan || !isTrackable(plan.rows)) {
+      return { ok: false, error: "Save a meal plan with a header and a food item first." };
+    }
+    if (!plan.rows.some((row) => row.kind === "food" && row.id === rowId)) {
+      return {
+        ok: false,
+        error: "That item isn't in your active meal plan any more. Refresh the page to see the latest.",
+      };
+    }
+    await setItemEaten(user.id, date, rowId, eaten);
+  } catch (error) {
+    console.error("Saving eaten meal item failed", error);
+    return { ok: false, error: SERVER_ERROR };
+  }
+
+  revalidatePath("/meals/tracker");
   return { ok: true };
 }

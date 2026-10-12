@@ -38,6 +38,9 @@ export type SavedPlanSummary = {
 export const MAX_MEAL_ROWS = 100;
 // How many plans one user can keep saved.
 export const MAX_SAVED_PLANS = 50;
+// How many items can be ticked as eaten in one day. Above one plan's rows,
+// since the active plan can change during the day.
+export const MAX_EATEN_ITEMS = 500;
 export const MEAL_NAME_MAX = 60;
 // Sanity cap on any one cell.
 export const MAX_MACRO_VALUE = 99999.99;
@@ -80,6 +83,36 @@ export function planTotals(rows: MealRow[]) {
   }
   for (const { key } of MACROS) totals[key] = roundMacro(totals[key]);
   return totals;
+}
+
+// A header and the foods under it, as the meal tracker lists them.
+export type MealSet = {
+  id: string;
+  // The header's name; empty for foods that sit above the first header.
+  name: string;
+  foods: { id: string; name: string }[];
+};
+
+// Groups a plan's rows into sets, one per header. Headers with no foods
+// under them are left out.
+export function mealSets(rows: MealRow[]): MealSet[] {
+  const sets: MealSet[] = [];
+  for (const row of rows) {
+    if (row.kind === "header") {
+      sets.push({ id: row.id, name: row.name, foods: [] });
+    } else {
+      if (sets.length === 0) sets.push({ id: "start", name: "", foods: [] });
+      sets.at(-1)!.foods.push({ id: row.id, name: row.name });
+    }
+  }
+  return sets.filter((set) => set.foods.length > 0);
+}
+
+// The meal tracker needs a plan with at least one header and one food.
+export function isTrackable(rows: MealRow[]) {
+  return (
+    rows.some((row) => row.kind === "header") && rows.some((row) => row.kind === "food")
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
