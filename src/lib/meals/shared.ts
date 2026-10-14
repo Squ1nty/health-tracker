@@ -90,7 +90,7 @@ export type MealSet = {
   id: string;
   // The header's name; empty for foods that sit above the first header.
   name: string;
-  foods: { id: string; name: string }[];
+  foods: { id: string; name: string; values: MacroValues }[];
 };
 
 // Groups a plan's rows into sets, one per header. Headers with no foods
@@ -102,7 +102,7 @@ export function mealSets(rows: MealRow[]): MealSet[] {
       sets.push({ id: row.id, name: row.name, foods: [] });
     } else {
       if (sets.length === 0) sets.push({ id: "start", name: "", foods: [] });
-      sets.at(-1)!.foods.push({ id: row.id, name: row.name });
+      sets.at(-1)!.foods.push({ id: row.id, name: row.name, values: row.values });
     }
   }
   return sets.filter((set) => set.foods.length > 0);

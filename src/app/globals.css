@@ -18,6 +18,13 @@
   --color-danger: #ff453a;
   --color-success: #30d158;
 
+  /* Meal tracker dials: the macros take the three primary colours, and
+     calories a purple that sits apart from all of them. */
+  --color-calories: #bf5af2;
+  --color-carbs: #ffd60a;
+  --color-protein: #ff453a;
+  --color-fat: #2f8cf0;
+
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter",
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }

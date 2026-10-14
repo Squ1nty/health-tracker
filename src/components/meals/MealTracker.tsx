@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { setMealItemEaten } from "@/app/actions/meals";
+import MealMacroDials from "@/components/meals/MealMacroDials";
 import MealTrackerGrid from "@/components/meals/MealTrackerGrid";
 import type { MealSet } from "@/lib/meals/shared";
 import { useTodayKey } from "@/lib/water/useTodayKey";
@@ -33,7 +34,8 @@ export default function MealTracker({
   const eatenToday = todayKey ? eatenByDate[todayKey] ?? [] : [];
   const eaten = new Set(eatenToday);
   const foods = sets.flatMap((set) => set.foods);
-  const eatenCount = foods.filter((food) => eaten.has(food.id)).length;
+  const eatenFoods = foods.filter((food) => eaten.has(food.id));
+  const eatenCount = eatenFoods.length;
   // The set that's up next: the first with something still to eat.
   const current = sets.find((set) => set.foods.some((food) => !eaten.has(food.id)));
   const shown = showAll ? sets : current ? [current] : [];
@@ -91,6 +93,8 @@ export default function MealTracker({
               {eatenCount} of {foods.length} eaten
             </p>
           </div>
+
+          <MealMacroDials foods={foods} eatenFoods={eatenFoods} />
 
           {shown.map((set) => (
             <section key={set.id} ref={set === current ? currentSection : undefined}>
