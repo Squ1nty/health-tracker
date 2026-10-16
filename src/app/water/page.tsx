@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import StatPage from "@/components/layout/StatPage";
+import { QuickAddMenu, QuickAddProvider } from "@/components/ui/QuickAdd";
 import WaterTracker from "@/components/water/WaterTracker";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getQuickAdds } from "@/lib/quickAdd/settings";
+import { DEFAULT_QUICK_ADDS, type QuickAdds } from "@/lib/quickAdd/shared";
 import { getWaterTotals } from "@/lib/water/logs";
 
 export const metadata: Metadata = {
@@ -13,29 +16,38 @@ export default async function WaterPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  let mlByDate: Record<string, number> | null = null;
+  let data: { mlByDate: Record<string, number>; quickAdds: QuickAdds } | null = null;
   try {
-    mlByDate = await getWaterTotals(user.id);
+    const [mlByDate, quickAdds] = await Promise.all([
+      getWaterTotals(user.id),
+      getQuickAdds(user.id, "water"),
+    ]);
+    data = { mlByDate, quickAdds };
   } catch (error) {
     console.error("Failed to load water logs", error);
   }
 
   return (
-    <StatPage
-      title="Water intake"
-      description="Track how much water you drink each day."
-      wide
-    >
-      {mlByDate ? (
-        <WaterTracker mlByDate={mlByDate} />
-      ) : (
-        <div
-          role="alert"
-          className="rounded-lg border border-danger/40 bg-danger/10 p-4 text-sm text-danger"
-        >
-          We couldn&apos;t load your water logs. Please refresh the page to try again.
-        </div>
-      )}
-    </StatPage>
+    // Wraps the whole page so the header's menu and the tracker's buttons
+    // share the quick add amounts.
+    <QuickAddProvider kind="water" initial={data?.quickAdds ?? DEFAULT_QUICK_ADDS.water}>
+      <StatPage
+        title="Water intake"
+        description="Track how much water you drink each day."
+        action={data && <QuickAddMenu />}
+        wide
+      >
+        {data ? (
+          <WaterTracker mlByDate={data.mlByDate} />
+        ) : (
+          <div
+            role="alert"
+            className="rounded-lg border border-danger/40 bg-danger/10 p-4 text-sm text-danger"
+          >
+            We couldn&apos;t load your water logs. Please refresh the page to try again.
+          </div>
+        )}
+      </StatPage>
+    </QuickAddProvider>
   );
 }

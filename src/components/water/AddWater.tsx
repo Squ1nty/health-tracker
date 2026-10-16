@@ -2,13 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { logWater } from "@/app/actions/water";
+import { QuickAddRow } from "@/components/ui/QuickAdd";
 import { MAX_ENTRY_ML, dateKey, formatVolume } from "@/lib/water/shared";
-
-// Outer steps are bigger, so their buttons are taller; sizes shrink toward the input.
-const STEPS = [
-  { ml: 250, className: "h-12 w-14 md:h-14 md:w-16" },
-  { ml: 100, className: "h-10 w-12 md:h-11 md:w-14" },
-];
 
 const PRESETS = [
   { ml: 250, label: "Glass" },
@@ -84,19 +79,7 @@ export default function AddWater() {
       onSubmit={handleSubmit}
       className="mx-auto flex w-full max-w-md flex-col gap-4"
     >
-      <div className="flex items-center justify-center gap-1.5 md:gap-2">
-        {STEPS.map((step) => (
-          <button
-            key={`minus-${step.ml}`}
-            type="button"
-            onClick={() => adjust(-step.ml)}
-            aria-label={`Remove ${step.ml} ml`}
-            className={`${buttonClasses} ${step.className}`}
-          >
-            -{step.ml}
-          </button>
-        ))}
-
+      <QuickAddRow unit="ml" minusVerb="Remove" onAdjust={adjust}>
         <label className="flex h-14 w-28 flex-col items-center justify-center rounded-md border border-line bg-surface transition-colors focus-within:border-accent md:h-16 md:w-32">
           {/* Text input with numeric keyboard rather than type="number", so
               there are no spinner arrows and only a sign and digits get through. */}
@@ -113,19 +96,7 @@ export default function AddWater() {
           />
           <span className="text-[10px] text-muted">ml</span>
         </label>
-
-        {[...STEPS].reverse().map((step) => (
-          <button
-            key={`plus-${step.ml}`}
-            type="button"
-            onClick={() => adjust(step.ml)}
-            aria-label={`Add ${step.ml} ml`}
-            className={`${buttonClasses} ${step.className}`}
-          >
-            +{step.ml}
-          </button>
-        ))}
-      </div>
+      </QuickAddRow>
 
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         {PRESETS.map((preset) => (

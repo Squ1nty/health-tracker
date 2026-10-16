@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { saveSteps } from "@/app/actions/steps";
 import ActivityGrid from "@/components/ui/ActivityGrid";
 import StepsRing from "@/components/steps/StepsRing";
+import { QuickAddRow } from "@/components/ui/QuickAdd";
 import {
   DAILY_STEP_GOAL,
   MAX_DAY_STEPS,
@@ -13,15 +14,6 @@ import {
 } from "@/lib/steps/shared";
 import { dateKey } from "@/lib/water/shared";
 import { useTodayKey } from "@/lib/water/useTodayKey";
-
-// Outer steps are bigger, so their buttons are taller; sizes shrink toward the input.
-const STEPS = [
-  { amount: 1000, className: "h-12 w-14 md:h-14 md:w-16" },
-  { amount: 100, className: "h-10 w-12 md:h-11 md:w-14" },
-];
-
-const buttonClasses =
-  "flex cursor-pointer items-center justify-center rounded-md border border-line bg-surface text-sm font-medium text-foreground transition-colors duration-200 hover:bg-surface-raised";
 
 const SOURCE_LABELS = { manual: "entered manually", shortcut: "synced from iPhone" };
 
@@ -164,19 +156,7 @@ export default function StepsTracker({
           )}
         </p>
 
-        <div className="flex items-center justify-center gap-1.5 md:gap-2">
-          {STEPS.map((step) => (
-            <button
-              key={`minus-${step.amount}`}
-              type="button"
-              onClick={() => adjust(-step.amount)}
-              aria-label={`Subtract ${step.amount} steps`}
-              className={`${buttonClasses} ${step.className}`}
-            >
-              -{step.amount}
-            </button>
-          ))}
-
+        <QuickAddRow unit="steps" minusVerb="Subtract" onAdjust={adjust}>
           <label className="flex h-14 w-28 flex-col items-center justify-center rounded-md border border-line bg-surface transition-colors focus-within:border-accent md:h-16 md:w-32">
             {/* Text input with numeric keyboard rather than type="number", so
                 there are no spinner arrows and only digits get through. */}
@@ -194,19 +174,7 @@ export default function StepsTracker({
             />
             <span className="text-[10px] text-muted">steps</span>
           </label>
-
-          {[...STEPS].reverse().map((step) => (
-            <button
-              key={`plus-${step.amount}`}
-              type="button"
-              onClick={() => adjust(step.amount)}
-              aria-label={`Add ${step.amount} steps`}
-              className={`${buttonClasses} ${step.className}`}
-            >
-              +{step.amount}
-            </button>
-          ))}
-        </div>
+        </QuickAddRow>
 
         <div className="flex flex-col gap-2">
           <button
