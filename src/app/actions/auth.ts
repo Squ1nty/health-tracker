@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getAuthCollections } from "@/lib/auth/collections";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
+import { clearFailedLogins, loginLockout, recordFailedLogin } from "@/lib/auth/rateLimit";
 import { createSession, deleteSession } from "@/lib/auth/session";
 import {
   validateLogin,
@@ -24,6 +25,11 @@ export type AuthFormState =
 const EMAIL_TAKEN = "An account with this email already exists.";
 const BAD_CREDENTIALS = "Incorrect email or password.";
 const SERVER_ERROR = "Something went wrong on our end. Please try again.";
+
+function tooManyAttempts(waitMs: number) {
+  const minutes = Math.max(1, Math.ceil(waitMs / 60000));
+  return `Too many failed login attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`;
+}
 
 function field(formData: FormData, name: string) {
   const value = formData.get(name);
@@ -95,6 +101,10 @@ export async function login(
   const { email, password } = result.data;
 
   try {
+    // Checked before the password, so a locked account can't keep being guessed.
+    const wait = await loginLockout(email);
+    if (wait > 0) return { message: tooManyAttempts(wait), values };
+
     const { users } = await getAuthCollections();
     const user = await users.findOne({ email });
 
@@ -105,8 +115,12 @@ export async function login(
     );
     // One message for both "no such account" and "wrong password", so the
     // form can't be used to check which emails are registered.
-    if (!user || !passwordMatches) return { message: BAD_CREDENTIALS, values };
+    if (!user || !passwordMatches) {
+      await recordFailedLogin(email);
+      return { message: BAD_CREDENTIALS, values };
+    }
 
+    await clearFailedLogins(email);
     await createSession(user._id);
   } catch (error) {
     console.error("Login failed", error);
