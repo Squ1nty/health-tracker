@@ -25,6 +25,27 @@
   --color-protein: #ff453a;
   --color-fat: #2f8cf0;
 
+  /* Get started page backgrounds, one per tracker. Kept dark enough that
+     white text stays readable on them. */
+  --color-intro-steps: #8a6c0c;
+  --color-intro-water: #00192e;
+  --color-intro-meals: #04220f;
+
+  /* The get started page's scroll cue: drifts down and brightens, then
+     eases back, on a loop. */
+  --animate-nudge: nudge 1.8s ease-in-out infinite;
+  @keyframes nudge {
+    0%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.45;
+    }
+    50% {
+      transform: translateY(8px);
+      opacity: 1;
+    }
+  }
+
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter",
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
