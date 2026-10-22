@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRef } from "react";
+import WaterDemo from "@/components/home/WaterDemo";
 import FadeIn from "@/components/ui/FadeIn";
 
 // The page's backgrounds, top to bottom. Each tracker gets a screen of its
@@ -88,6 +89,21 @@ export default function GetStarted() {
                 {tracker.title}
               </h2>
             </FadeIn>
+            {tracker.id === "water" && (
+              <>
+                <FadeIn>
+                  <p className="mt-3 max-w-xs text-balance text-base text-foreground/80">
+                    Tap to log a drink and watch your drop fill up.
+                  </p>
+                </FadeIn>
+                {/* Fills the rest of the screen, with the demo in the middle of it. */}
+                <div className="flex w-full flex-1 flex-col items-center justify-center py-10">
+                  <FadeIn>
+                    <WaterDemo />
+                  </FadeIn>
+                </div>
+              </>
+            )}
           </section>
         </div>
       ))}

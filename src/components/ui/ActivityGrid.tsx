@@ -12,7 +12,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const DAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""];
 
 // Level 0 is an empty day; 1-4 are progressively stronger shades of the accent blue.
-const LEVEL_CLASSES = [
+export const LEVEL_CLASSES = [
   "bg-surface-raised",
   "bg-accent/25",
   "bg-accent/50",

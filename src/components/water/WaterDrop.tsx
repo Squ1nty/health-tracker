@@ -6,9 +6,15 @@ const DROP_BOTTOM = 120;
 
 export default function WaterDrop({
   level = 0,
+  className = "w-56 md:w-72",
+  emptyClassName = "fill-surface",
 }: {
   // How full the drop is, 0-1 (today's intake as a share of the daily goal).
   level?: number;
+  // The drop's size.
+  className?: string;
+  // The fill of the drop's empty part.
+  emptyClassName?: string;
 }) {
   const clamped = Math.min(1, Math.max(0, level));
 
@@ -18,7 +24,7 @@ export default function WaterDrop({
         viewBox="0 0 100 130"
         role="img"
         aria-label={`Water drop, ${Math.round(clamped * 100)}% full`}
-        className="w-56 md:w-72"
+        className={className}
       >
         <defs>
           <clipPath id="water-drop-clip">
@@ -26,7 +32,7 @@ export default function WaterDrop({
           </clipPath>
         </defs>
 
-        <path d={DROP_PATH} className="fill-surface" />
+        <path d={DROP_PATH} className={emptyClassName} />
         {/* The water is a full-height block scaled up from the base, so the
             level can animate; the clip sits on the wrapper (not the block)
             so it isn't scaled along with it. */}
