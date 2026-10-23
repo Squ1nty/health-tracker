@@ -1,40 +1,17 @@
 "use client";
 
-import { Caveat } from "next/font/google";
 import { useEffect, useRef, useState } from "react";
+import { ScribbleArrow, handwriting } from "@/components/home/Scribble";
 import { LEVEL_CLASSES } from "@/components/ui/ActivityGrid";
 import WaterDrop from "@/components/water/WaterDrop";
 import { QUICK_ADD_MAX } from "@/lib/quickAdd/shared";
 import { formatVolume } from "@/lib/water/shared";
-
-// A handwriting font, for notes that look scribbled onto the page.
-const handwriting = Caveat({ subsets: ["latin"], weight: "600" });
 
 // Smaller than the real daily goal, so a few taps fill the drop.
 const DEMO_GOAL_ML = 2000;
 
 const boxClasses =
   "flex h-11 w-24 items-center justify-center rounded-md border border-white/20 bg-white/10 text-sm font-semibold text-foreground transition-all duration-200";
-
-// A hand-drawn arrow for the scribbled notes, pointing up and to the right
-// before any rotating.
-function ScribbleArrow({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 40 40"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={`h-10 w-10 ${className}`}
-    >
-      <path d="M8 36C9 22 17 11 31 6" />
-      <path d="M31 6L22 5M31 6L26 14" />
-    </svg>
-  );
-}
 
 const itemClasses =
   "block w-full cursor-pointer px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-line";

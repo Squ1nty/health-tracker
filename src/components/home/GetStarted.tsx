@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useRef } from "react";
+import MealsDemo from "@/components/home/MealsDemo";
+import WalkingShoes from "@/components/home/WalkingShoes";
 import WaterDemo from "@/components/home/WaterDemo";
 import FadeIn from "@/components/ui/FadeIn";
 
@@ -84,11 +86,29 @@ export default function GetStarted() {
         <div key={tracker.id} className="w-full">
           <Blend from={index === 0 ? BLACK.from : TRACKERS[index - 1].from} to={tracker.to} />
           <section ref={index === 0 ? next : undefined} className={`${trackerScreen} ${tracker.bg}`}>
+            {tracker.id === "steps" && (
+              <WalkingShoes className="absolute right-4 top-6 w-24 md:right-12 md:w-32" />
+            )}
             <FadeIn>
               <h2 className="text-4xl font-extrabold tracking-tight text-foreground md:text-5xl">
                 {tracker.title}
               </h2>
             </FadeIn>
+            {tracker.id === "meals" && (
+              <>
+                <FadeIn>
+                  <p className="mt-3 max-w-xs text-balance text-base text-foreground/80">
+                    Plan your meals, then tick them off as you eat.
+                  </p>
+                </FadeIn>
+                {/* Fills the rest of the screen, with the demo in the middle of it. */}
+                <div className="flex w-full flex-1 flex-col items-center justify-center py-10">
+                  <FadeIn className="flex w-full justify-center">
+                    <MealsDemo />
+                  </FadeIn>
+                </div>
+              </>
+            )}
             {tracker.id === "water" && (
               <>
                 <FadeIn>

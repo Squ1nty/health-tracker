@@ -46,6 +46,26 @@
     }
   }
 
+  /* The get started page's walking shoes. One step, toe toward the bottom
+     left: the heel peels up, the shoe swings forward through the air and
+     lands, then slides back while planted as the other foot takes its turn. */
+  --animate-step: step 1.4s linear infinite;
+  @keyframes step {
+    0%,
+    100% {
+      transform: translate(8px, -4px) rotate(0deg);
+    }
+    12% {
+      transform: translate(6px, -7px) rotate(-10deg);
+    }
+    30% {
+      transform: translate(-2px, -10px) rotate(-5deg);
+    }
+    45% {
+      transform: translate(-9px, 5px) rotate(0deg);
+    }
+  }
+
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter",
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
