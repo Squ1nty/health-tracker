@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ScribbleArrow, handwriting } from "@/components/home/Scribble";
-import { LEVEL_CLASSES } from "@/components/ui/ActivityGrid";
+import GridLegend, { gridLevel } from "@/components/home/GridLegend";
 import WaterDrop from "@/components/water/WaterDrop";
 import { QUICK_ADD_MAX } from "@/lib/quickAdd/shared";
 import { formatVolume } from "@/lib/water/shared";
@@ -49,9 +49,6 @@ export default function WaterDemo() {
   const adjust = (delta: number) =>
     setMl((current) => Math.min(DEMO_GOAL_ML, Math.max(0, current + delta)));
 
-  // The grid's shade for today so far: empty, then four steps up to the goal.
-  const gridLevel =
-    ml <= 0 ? 0 : Math.min(LEVEL_CLASSES.length - 1, Math.ceil(ml / (DEMO_GOAL_ML / 4)));
 
   const parsed = drafts?.map(Number);
   const valid = parsed?.every((amount) => amount >= 1 && amount <= QUICK_ADD_MAX) ?? false;
@@ -65,18 +62,7 @@ export default function WaterDemo() {
     <div className="flex flex-col items-center gap-4">
       {/* The water grid's legend, with the shade today's drop would give
           its square picked out. */}
-      <div className="flex items-center gap-1.5 text-xs text-muted">
-        <span className="mr-1">Less</span>
-        {LEVEL_CLASSES.map((levelClass, level) => (
-          <span
-            key={levelClass}
-            className={`h-4 w-4 rounded-xs transition-shadow duration-300 ${levelClass} ${
-              level === gridLevel ? "ring-2 ring-foreground" : ""
-            }`}
-          />
-        ))}
-        <span className="ml-1">More</span>
-      </div>
+      <GridLegend level={gridLevel(ml, DEMO_GOAL_ML)} />
       <div className="flex flex-col items-center text-foreground/75">
         <ScribbleArrow className="-rotate-45" />
         <p className={`${handwriting.className} max-w-64 text-balance text-xl leading-tight`}>

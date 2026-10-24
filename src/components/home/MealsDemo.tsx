@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import GridLegend, { gridLevel } from "@/components/home/GridLegend";
 import { ScribbleArrow, handwriting } from "@/components/home/Scribble";
 import MealMacroDials from "@/components/meals/MealMacroDials";
 import type { MacroValues } from "@/lib/meals/shared";
@@ -30,6 +31,16 @@ export default function MealsDemo() {
 
   return (
     <div className="flex w-full max-w-md flex-col items-center gap-2">
+      {/* The meal grid's legend, with the shade today's ticks would give its
+          square picked out, and a scribbled tip pointing up at it. */}
+      <GridLegend level={gridLevel(eatenFoods.length, FOODS.length)} />
+      <div className="mb-8 flex flex-col items-center text-foreground/75">
+        <ScribbleArrow className="-rotate-45" />
+        <p className={`${handwriting.className} max-w-64 text-balance text-xl leading-tight`}>
+          Every meal you tick fills in your grid, just like water!
+        </p>
+      </div>
+
       {/* A scribbled tip pointing down at the dials. */}
       <div className="flex flex-col items-center text-foreground/75">
         <p className={`${handwriting.className} max-w-64 text-balance text-xl leading-tight`}>
