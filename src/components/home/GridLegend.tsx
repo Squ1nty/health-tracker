@@ -1,10 +1,12 @@
 import { LEVEL_CLASSES } from "@/components/ui/ActivityGrid";
 
 // The trackers' year grid legend, Less to More, for the get started demos.
-// The square for the demo's current shade is picked out.
+// The square for the demo's current shade is picked out. It sits on the
+// app's own dark background, since the lighter shades are see-through and
+// would mix with the screen's colour.
 export default function GridLegend({ level }: { level: number }) {
   return (
-    <div className="flex items-center gap-1.5 text-xs text-muted">
+    <div className="flex items-center gap-1.5 rounded-full bg-background/70 px-3 py-1.5 text-xs text-muted">
       <span className="mr-1">Less</span>
       {LEVEL_CLASSES.map((levelClass, index) => (
         <span

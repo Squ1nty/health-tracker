@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef } from "react";
 import MealsDemo from "@/components/home/MealsDemo";
+import StepsDemo from "@/components/home/StepsDemo";
 import WalkingShoes from "@/components/home/WalkingShoes";
 import WaterDemo from "@/components/home/WaterDemo";
 import FadeIn from "@/components/ui/FadeIn";
@@ -94,6 +95,21 @@ export default function GetStarted() {
                 {tracker.title}
               </h2>
             </FadeIn>
+            {tracker.id === "steps" && (
+              <>
+                <FadeIn>
+                  <p className="mt-3 max-w-xs text-balance text-base text-foreground/80">
+                    Log your steps, or sync them automatically from your iPhone.
+                  </p>
+                </FadeIn>
+                {/* Fills the rest of the screen, with the demo in the middle of it. */}
+                <div className="flex w-full flex-1 flex-col items-center justify-center py-10">
+                  <FadeIn>
+                    <StepsDemo />
+                  </FadeIn>
+                </div>
+              </>
+            )}
             {tracker.id === "meals" && (
               <>
                 <FadeIn>
@@ -130,7 +146,31 @@ export default function GetStarted() {
 
       <Blend from={TRACKERS.at(-1)!.from} to={BLACK.to} />
       <section className={screen}>
-        <FadeIn className="flex w-full max-w-md flex-col gap-4">
+        <FadeIn>
+          <h2 className="text-4xl font-extrabold tracking-tight text-foreground md:text-5xl">
+            Ready to start?
+          </h2>
+        </FadeIn>
+        <FadeIn>
+          <p className="mt-3 max-w-xs text-balance text-base text-foreground/80">
+            Steps, water and meals, all in one place.
+          </p>
+        </FadeIn>
+        {/* A nod back to the screens above, in their colours. */}
+        <FadeIn>
+          <ul className="mt-6 flex gap-2">
+            {TRACKERS.map((tracker) => (
+              <li
+                key={tracker.id}
+                className={`rounded-full border border-white/15 px-3 py-1 text-xs font-medium text-foreground ${tracker.bg}`}
+              >
+                {tracker.title}
+              </li>
+            ))}
+          </ul>
+        </FadeIn>
+
+        <FadeIn className="mt-12 flex w-full max-w-md flex-col gap-4">
           <Link
             href="/login?mode=signup"
             className="flex h-12 items-center justify-center rounded-md bg-accent text-base font-semibold text-white transition-all duration-200 hover:bg-accent-hover active:scale-[98%]"
