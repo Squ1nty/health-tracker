@@ -10,11 +10,12 @@ import FadeIn from "@/components/ui/FadeIn";
 
 // The page's backgrounds, top to bottom. Each tracker gets a screen of its
 // own colour, and a gradient band between screens fades one into the next.
-// Class names are written out in full so Tailwind can find them.
+// Class names are written out in full so Tailwind can find them. Each screen
+// also takes its tracker's accent, so the demos match the real pages.
 const TRACKERS = [
-  { id: "steps", title: "Steps", bg: "bg-intro-steps", from: "from-intro-steps", to: "to-intro-steps" },
-  { id: "water", title: "Water", bg: "bg-intro-water", from: "from-intro-water", to: "to-intro-water" },
-  { id: "meals", title: "Meals", bg: "bg-intro-meals", from: "from-intro-meals", to: "to-intro-meals" },
+  { id: "steps", title: "Steps", theme: "theme-steps", bg: "bg-intro-steps", from: "from-intro-steps", to: "to-intro-steps" },
+  { id: "water", title: "Water", theme: "theme-water", bg: "bg-intro-water", from: "from-intro-water", to: "to-intro-water" },
+  { id: "meals", title: "Meals", theme: "theme-meals", bg: "bg-intro-meals", from: "from-intro-meals", to: "to-intro-meals" },
 ];
 
 // The intro and sign-up screens sit on the app's own black.
@@ -86,7 +87,7 @@ export default function GetStarted() {
       {TRACKERS.map((tracker, index) => (
         <div key={tracker.id} className="w-full">
           <Blend from={index === 0 ? BLACK.from : TRACKERS[index - 1].from} to={tracker.to} />
-          <section ref={index === 0 ? next : undefined} className={`${trackerScreen} ${tracker.bg}`}>
+          <section ref={index === 0 ? next : undefined} className={`${trackerScreen} ${tracker.bg} ${tracker.theme}`}>
             {tracker.id === "steps" && (
               <WalkingShoes className="absolute right-4 top-6 w-24 md:right-12 md:w-32" />
             )}

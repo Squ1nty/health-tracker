@@ -29,6 +29,7 @@ export default async function MealTrackerPage() {
 
   return (
     <StatPage
+      theme="meals"
       title="Meal Tracker"
       description="Tick off the meals in your active plan as you eat them."
       action={<MealPlansSidebarButton />}

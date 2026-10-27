@@ -24,6 +24,7 @@ export default async function MealPlansPage() {
 
   return (
     <StatPage
+      theme="meals"
       title="Meal Plans"
       description="Your saved meal plans."
       action={<MealPlansSidebarButton />}

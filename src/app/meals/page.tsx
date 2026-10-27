@@ -27,6 +27,7 @@ export default async function MealsPage() {
 
   return (
     <StatPage
+      theme="meals"
       title="Meals"
       description="Plan your meals around the macros you want to hit."
       action={

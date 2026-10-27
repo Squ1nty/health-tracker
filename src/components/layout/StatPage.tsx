@@ -11,6 +11,7 @@ export default async function StatPage({
   children,
   wide = false,
   back = { href: "/", label: "Home" },
+  theme,
 }: {
   title: string;
   description: string;
@@ -21,12 +22,15 @@ export default async function StatPage({
   wide?: boolean;
   // Where the link above the title leads. Home unless the page sits under another one.
   back?: { href: string; label: string };
+  // The tracker whose accent colour the page uses. Water and pages without
+  // one keep the default blue.
+  theme?: "steps" | "water" | "meals";
 }) {
   // Stat pages are per-user, so they need a logged-in account.
   if (!(await getCurrentUser())) redirect("/login");
 
   return (
-    <div className="flex min-h-svh w-full flex-col">
+    <div className={`flex min-h-svh w-full flex-col ${theme ? `theme-${theme}` : ""}`}>
       <Navbar />
       <main className="flex flex-1 flex-col items-center px-4 py-6">
         <div

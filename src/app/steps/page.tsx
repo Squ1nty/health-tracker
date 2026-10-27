@@ -40,6 +40,7 @@ export default async function StepsPage() {
     // share the quick add amounts.
     <QuickAddProvider kind="steps" initial={data?.quickAdds ?? DEFAULT_QUICK_ADDS.steps}>
       <StatPage
+        theme="steps"
         title="Steps"
         description="Track your daily step count."
         action={data && <QuickAddMenu />}

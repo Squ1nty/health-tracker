@@ -74,6 +74,18 @@
   color-scheme: dark;
 }
 
+/* Per-tracker accents, in the hues of the get started screens but bright
+   enough to stand out on black. Everything accent-coloured (buttons, links,
+   rings, the year grid's shades) picks them up. Water keeps the default blue. */
+.theme-steps {
+  --color-accent: #ea580c;
+  --color-accent-hover: #f97316;
+}
+.theme-meals {
+  --color-accent: #16a34a;
+  --color-accent-hover: #22c55e;
+}
+
 body {
   background: var(--color-background);
   color: var(--color-foreground);

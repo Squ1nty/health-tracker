@@ -32,6 +32,7 @@ export default async function WaterPage() {
     // share the quick add amounts.
     <QuickAddProvider kind="water" initial={data?.quickAdds ?? DEFAULT_QUICK_ADDS.water}>
       <StatPage
+        theme="water"
         title="Water intake"
         description="Track how much water you drink each day."
         action={data && <QuickAddMenu />}
