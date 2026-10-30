@@ -16,7 +16,11 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const currentUser = await getCurrentUser();
   // Only the fields the UI needs cross over to client components.
-  const user = currentUser && { name: currentUser.name, email: currentUser.email };
+  const user = currentUser && {
+    name: currentUser.name,
+    email: currentUser.email,
+    avatarUrl: currentUser.avatarUrl,
+  };
 
   return (
     <html

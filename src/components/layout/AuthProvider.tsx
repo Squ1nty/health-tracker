@@ -5,6 +5,7 @@ import { createContext, useContext } from "react";
 export type AuthUser = {
   name: string;
   email: string;
+  avatarUrl: string | null;
 };
 
 // undefined = no provider mounted; null = logged out.

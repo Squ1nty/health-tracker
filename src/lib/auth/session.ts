@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { createHash, randomBytes } from "node:crypto";
 import type { ObjectId } from "mongodb";
 import { getAuthCollections } from "@/lib/auth/collections";
+import { avatarUrl } from "@/lib/profile/shared";
 
 const SESSION_COOKIE = "session";
 const SESSION_DAYS = 30;
@@ -14,6 +15,8 @@ export type CurrentUser = {
   id: string;
   name: string;
   email: string;
+  // Where the profile picture is served from, or null without one.
+  avatarUrl: string | null;
 };
 
 function hashToken(token: string) {
@@ -73,11 +76,17 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 
     const user = await users.findOne(
       { _id: session.userId },
-      { projection: { name: 1, email: 1 } }
+      { projection: { name: 1, email: 1, avatarUpdatedAt: 1 } }
     );
     if (!user) return null;
 
-    return { id: user._id.toHexString(), name: user.name, email: user.email };
+    const id = user._id.toHexString();
+    return {
+      id,
+      name: user.name,
+      email: user.email,
+      avatarUrl: user.avatarUpdatedAt ? avatarUrl(id, user.avatarUpdatedAt) : null,
+    };
   } catch (error) {
     // If the database is unreachable, treat the visitor as logged out
     // instead of crashing every page.

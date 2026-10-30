@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Avatar from "@/components/ui/Avatar";
 import ChevronRight from "@/components/ui/ChevronRight";
 import { useAuth } from "@/components/layout/AuthProvider";
 import { logout } from "@/app/actions/auth";
@@ -86,9 +87,13 @@ export default function Navbar() {
           )}
           {user ? (
             <>
-              <span className="max-w-40 truncate px-2 text-sm text-muted" title={user.email}>
+              <Link
+                href="/profile"
+                title={user.email}
+                className="max-w-40 truncate rounded-md px-3 py-2 text-sm text-muted transition-colors duration-200 hover:bg-surface-raised hover:text-foreground"
+              >
                 {user.name}
-              </span>
+              </Link>
               <form action={logout}>
                 <button
                   type="submit"
@@ -184,9 +189,15 @@ export default function Navbar() {
             <hr className='border-line my-2'></hr>
             {user ? (
               <div className="flex items-center justify-between gap-3 px-3">
-                <span className="min-w-0 truncate text-sm text-muted" title={user.email}>
-                  {user.name}
-                </span>
+                <Link
+                  href="/profile"
+                  onClick={closeMenu}
+                  title={user.email}
+                  className="flex min-w-0 items-center gap-3 rounded-md py-1 text-sm text-muted transition-colors duration-200 hover:text-foreground"
+                >
+                  <Avatar name={user.name} seed={user.email} image={user.avatarUrl} />
+                  <span className="truncate">{user.name}</span>
+                </Link>
                 <form action={logout} onSubmit={closeMenu}>
                   <button
                     type="submit"

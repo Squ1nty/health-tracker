@@ -10,6 +10,9 @@ export type UserDoc = {
   email: string;
   passwordHash: string;
   createdAt: Date;
+  // When the profile picture was last changed; absent without one. The
+  // picture itself lives in the avatars collection.
+  avatarUpdatedAt?: Date;
 };
 
 export type SessionDoc = {
@@ -37,6 +40,7 @@ const USER_VALIDATOR: Document = {
       },
       passwordHash: { bsonType: "string", pattern: "^scrypt\\$" },
       createdAt: { bsonType: "date" },
+      avatarUpdatedAt: { bsonType: "date" },
     },
   },
 };
